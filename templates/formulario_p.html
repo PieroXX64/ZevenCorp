@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulario P - Evaluación Docente</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    .form-section { margin-bottom: 2em; }
+    .criterio { border: 1px solid #ccc; padding: 1em; margin-bottom: 1.5em; }
+    .campo { margin-bottom: 0.5em; }
+    label { font-weight: bold; display: block; margin-bottom: 0.3em; }
+    select, input[type="text"], textarea { width: 100%; padding: 0.4em; }
+    .resultado-final { font-weight: bold; font-size: 1.2em; }
+    .btn-green { background-color: green; color: white; padding: 0.6em 1.2em; border: none; cursor: pointer; }
+    summary { font-weight: bold; cursor: pointer; margin: 0.5em 0; }
+    details { margin-bottom: 0.5em; }
+    details p {
+        font-size: 1rem;
+        margin: 0;
+        word-wrap: break-word; /* Asegura que los textos largos se ajusten al tamaño del contenedor */
+    }
+    textarea {
+        height: 100px;
+        font-size: 1rem;
+        resize: vertical; /* Permite ajustar el tamaño del textarea */
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Evaluación del desempeño en el aula – PROY. Y EFSRT</h2>
+  <form id="formulario-p">
+    <div class="form-section" id="criterios"></div>
+
+    <div class="form-section">
+      <label>Total Puntaje:</label>
+      <input type="text" id="total-puntaje" readonly>
+      <label>Porcentaje:</label>
+      <input type="text" id="porcentaje" readonly>
+      <label>Resultado:</label>
+      <input type="text" id="resultado-final" class="resultado-final" readonly>
+    </div>
+
+    <button type="button" id="continuar-btn" class="btn-green">Continuar con la Evaluación de la carpeta pedagógica – PROY. Y EFSRT</button>
+
+    <!-- La segunda sección debe estar oculta inicialmente -->
+    <div class="form-section hidden" id="carpeta">
+      <h2>Evaluación de la carpeta pedagógica – PROY. Y EFSRT</h2>
+      <div id="preguntas-carpetas"></div>
+
+      <div class="form-section">
+        <label>Porcentaje:</label>
+        <input type="text" id="porcentaje-carpetas" readonly>
+        <label>Resultado:</label>
+        <input type="text" id="resultado-carpetas" class="resultado-final" readonly>
+      </div>
+
+     <button type="button" id="btn-enviar" class="btn-green">ENVIAR</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// Datos de los criterios
+const criterios = [
+  {
+    nombre: "DOMINIO DISCIPLINAR",
+    niveles: [
+      ["EN INICIO", "Sus explicaciones son poco claras en la introducción de todos los nuevos temas o el refuerzo la mayor parte de los temas en los que hayan quedado dudas."],
+      ["EN PROCESO", "Sus explicaciones son poco claras en la introducción de la mayoría de los nuevos temas o el refuerzo la mayor parte de los temas en los que hayan quedado dudas."],
+      ["LOGRADO", "Sus explicaciones son claras y detalladas, en la introducción de la mayoría de los nuevos temas o para reforzar la mayor parte de los temas en los que hayan quedado dudas."],
+      ["DESTACADO", "Sus explicaciones son claras y detalladas, en la introducción de todos los nuevos temas o para reforzar todo tema en el que hayan quedado dudas."]
+    ]
+  },
+  {
+    nombre: "ORGANIZACIÓN DE LAS ACTIVIDADES E INVOLUCRAMIENTO DE LOS ESTUDIANTES",
+    niveles: [
+      ["EN INICIO", "Las actividades del proyecto se observan desorganizadas (sin tareas claras, ni responsables ni plazos establecidos)."],
+      ["EN PROCESO", "Las actividades del proyecto se observan desorganizadas... el instructor intenta organizar... pero sin lograrlo efectivamente."],
+      ["LOGRADO", "El instructor establece organización de las actividades del proyecto, comunicando a los estudiantes las tareas, responsables y plazos que deben cumplir, usando distintas técnicas y herramientas para la gestión de dichas actividades."],
+      ["DESTACADO", "El instructor guía el proceso de organización de las actividades del proyecto, ayudando a los estudiantes a definir tareas, responsables y plazos, usando distintas técnicas y herramientas para la gestión de dichas actividades."],
+    ]
+  },
+  {
+    nombre: "MONITOREO DE LOS APRENDIZAJES",
+    niveles: [
+      ["EN INICIO", "No hay monitoreo durante la mayor parte de la sesión, el instructor se encuentra realizando otra actividad sin interactuar con los estudiantes y puede hacer recorridos superficiales puntuales sin nigún tipo de intervención."],
+      ["EN PROCESO", "Hay monitoreo durante la mayor parte de la sesión, sin embargo, los recorridos son superficiales y las preguntas que se hacen sobre los temas del proyecto o el avance de actividades son preguntas principalmente cerradas y hechas de forma inespecífica."],
+      ["LOGRADO", "Monitorea de forma activa el trabajo de los estudiantes durante la mayor parte de la sesión, haciendo recorridos al aula o taller y preguntando y repreguntado sobre los temas tratados y las actividades realizadas. Las preguntas y repreguntas son abiertas y dirigidas a estudiantes específicos."],
+      ["DESTACADO", "Monitorea de forma activa el trabajo de los estudiantes a lo largo de toda la sesión, haciendo recorridos al aula o taller y preguntando y repreguntado sobre los temas tratados y las actividades realizadas. Las preguntas y repreguntas son principalmente abiertas y dirigidas a estudiantes específicos."],
+    ]
+  },
+  {
+    nombre: "RETROALIMENTACIÓN DEL DESEMPEÑO DE ESTUDIANTES",
+    niveles: [
+      ["EN INICIO", "Ante las dificultades, dudas o errores de los estudiantes no brinda ningún tipo de retroalimentación para que logren resolver las dificultades de su proceso de aprendizaje."],
+      ["EN PROCESO", "Ante las dificultades, dudas o errores de sus estudiantes, suele brindar retroalimentación superficial: el/la docente únicamente (a) señala si la respuesta o procedimiento que está desarrollando el/la estudiante es incorrecta; (b) da la respuesta correcta o señala dónde encontrarla; (c) repite la explicación original sin adaptarla."],
+      ["LOGRADO", "Ante las dificultades, dudas o errores de sus estudiantes, suele  brindar retroalimentación descriptiva ofreciendo a los estudiantes elementos de información suficiente que le permiten superar su dificultad: (a) explica por qué algo no está logrado; (b) sugiere en detalle qué hacer para mejorar (c) adapta la explicación original  o  información  para favorecer la comprensión."],
+      ["DESTACADO", "Ante las dificultades, dudas o errores el instructor brinda retroalimentación por descubrimiento o reflexión: responde con repreguntas, ofrece pistas mínimas con el fin de guiar a sus estudiantes en el análisis y logren encontrar por ellos mismos una solución o estrategia o, para que reflexionen sobre su propio razonamiento e identifiquen el origen de sus concepciones o errores."],
+    ]
+  },
+  {
+    nombre: "MANEJO DEL COMPORTAMIENTO Y TRATO A ESTUDIANTES",
+    niveles: [
+      ["EN INICIO", "El instructor no es respetuoso con los estudiantes o destaca aspectos negativos sobre su desempeño o capacidades.  Los estudiantes muestran conductas irrespetuosas hacia sus compañeros y/o hacia el instructor y éste no interviene cuando los identifica."],
+      ["EN PROCESO", "El instructor es siempre respetuoso con los estudiantes, sin embargo, muestra una actitud neutral y/o distante hacia los estudiantes. No se caracteriza por utilizar recursos de comunicación positivos. Los estudiantes son respetuosos con sus compañeros con el instructor."],
+      ["LOGRADO", "El instructor es siempre respetuoso con los estudiantes y refuerza siempre positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades. Los estudiantes son respetuosos con sus compañeros y con el instructor."],
+      ["DESTACADO", "El instructor es siempre respetuoso/a con los/las estudiantes y refuerza siempre positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades. Los/las estudiantes son respetuosos con sus compañeros y con instructor."],
+    ]
+  }
+];
+
+// Mostrar los criterios en el formulario
+const contenedor = document.getElementById("criterios");
+criterios.forEach((criterio, i) => {
+  const div = document.createElement("div");
+  div.className = "criterio";
+  div.innerHTML = `
+    <div class="campo"><label>Criterio ${i + 1}: ${criterio.nombre}</label></div>
+    ${criterio.niveles.map(([nivel, texto]) => `
+      <details>
+        <summary>${nivel}</summary>
+        <p>${texto}</p>
+      </details>
+    `).join('')}
+    <div class="campo">
+      <label>Puntaje:</label>
+      <select class="puntaje">
+        <option value="">Seleccione</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+      </select>
+    </div>
+    <div class="campo"><label>Observaciones:</label><textarea></textarea></div>
+    <div class="campo"><label>Recomendaciones:</label><textarea></textarea></div>
+  `;
+  contenedor.appendChild(div);
+});
+
+// Calcular el puntaje y porcentaje
+function calcularResultados() {
+  let total = 0;
+  let count = 0;
+  document.querySelectorAll(".puntaje").forEach(s => {
+    const val = parseFloat(s.value);
+    if (!isNaN(val)) {
+      total += val;
+      count++;
+    }
+  });
+  const porcentaje = count ? (total / (4 * count) * 100).toFixed(2) : "";
+  document.getElementById("total-puntaje").value = total;
+  document.getElementById("porcentaje").value = porcentaje ? porcentaje + "%" : "";
+  const resultado = document.getElementById("resultado-final");
+  if (porcentaje >= 90) resultado.value = "DESTACADO";
+  else if (porcentaje >= 75) resultado.value = "LOGRADO";
+  else if (porcentaje >= 50) resultado.value = "EN PROCESO";
+  else if (porcentaje > 0) resultado.value = "EN INICIO";
+  else resultado.value = "";
+}
+
+// evento de cambio
+setTimeout(() => {
+  document.querySelectorAll(".puntaje").forEach(select => {
+    select.addEventListener("change", calcularResultados);
+  });
+}, 100);
+
+// Función para mostrar la segunda sección (carpeta) al hacer clic en el botón
+document.getElementById("continuar-btn").addEventListener("click", () => {
+  document.getElementById("carpeta").classList.remove("hidden");
+});
+
+// Función para enviar la evaluación
+document.getElementById("btn-enviar").addEventListener("click", async () => {
+  const filtros = {
+    ANO: sessionStorage.getItem("ano"),
+    PERIODO: sessionStorage.getItem("periodo"),
+    SEDE_CURSO: sessionStorage.getItem("sede_curso"),
+    Carrera: sessionStorage.getItem("carrera"),
+    Seccion: sessionStorage.getItem("seccion"),
+    Asignatura: sessionStorage.getItem("asignatura"),
+    INSTRUCTOR: sessionStorage.getItem("instructor"),
+    NRC: sessionStorage.getItem("nrc"),
+    Eval_Aula: calcularPorcentajeAula(),
+    Eval_Carpeta: calcularPorcentajeCarpeta()
+  };
+
+  const response = await fetch("/guardar_resultado", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(filtros)
+  });
+
+  const result = await response.json();
+  if (result.status === "ok") {
+    alert("Evaluación guardada exitosamente.");
+    window.location.href = "/";  // Redirige al inicio
+  } else {
+    alert("Error al guardar la evaluación: " + result.mensaje);
+  }
+});
+
+// Calcular porcentajes
+function calcularPorcentajeAula() {
+  return parseFloat(document.getElementById("porcentaje").value) || 0;
+}
+
+function calcularPorcentajeCarpeta() {
+  return parseFloat(document.getElementById("porcentaje-carpetas").value) || 0;
+}
+
+</script>
+
+</body>
+</html>

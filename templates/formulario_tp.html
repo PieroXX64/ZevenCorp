@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Formulario TP - Evaluación Docente</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    .form-section { margin-bottom: 2em; }
+    .pregunta { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; }
+    .campo { margin-bottom: 0.5em; }
+    label { font-weight: bold; display: block; margin-bottom: 0.3em; }
+    select, input[type="text"] { width: 100%; padding: 0.4em; }
+    .resultado-final { font-weight: bold; font-size: 1.2em; }
+    .hidden { display: none; }
+    .btn-green { background-color: green; color: white; padding: 0.6em 1.2em; border: none; cursor: pointer; }
+    .btn-group { display: flex; justify-content: end; margin-top: 1em; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Evaluación del desempeño en el aula - TP</h2>
+  <form id="formulario-tp">
+    <div class="form-section" id="preguntas-aula"></div>
+
+    <div class="form-section">
+      <label>Total Puntaje:</label>
+      <input type="text" id="total-puntaje" readonly>
+      <label>Porcentaje:</label>
+      <input type="text" id="porcentaje" readonly>
+      <label>Resultado:</label>
+      <input type="text" id="resultado-final" class="resultado-final" readonly>
+    </div>
+
+    <button type="button" onclick="mostrarSegundaSeccion()">Continuar con la Evaluación de la carpeta pedagógica – TP</button>
+
+    <div class="form-section hidden" id="seccion-carpetas">
+      <h2>Evaluación de la carpeta pedagógica – TP</h2>
+      <div id="preguntas-carpetas"></div>
+
+      <div class="form-section">
+        <label>Porcentaje:</label>
+        <input type="text" id="porcentaje-carpetas" readonly>
+        <label>Resultado:</label>
+        <input type="text" id="resultado-carpetas" class="resultado-final" readonly>
+      </div>
+
+      <div class="btn-group">
+         <button type="button" id="btn-enviar" class="btn-green">ENVIAR</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+const preguntasAula = [
+  ["Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.", 2],
+  ["Comparte dos o más ejemplos, experiencias profesionales o explicaciones que conectan de forma explícita los temas tratados en la sesión con el mundo laboral.", 2],
+  ["Comunica, en al menos dos momentos distintos, los puntos clave (b) de los temas a tratar durante la sesión.", 1],
+  ["Explica de forma clara y detallada los temas que van trabajarse y aplicarse durante la sesión (qué, por qué y para qué), usando diversas estrategias y recursos (diagramas, esquemas, pizarra, videos cortos u otros) para reforzar las explicaciones (c).", 2],
+  ["Explica de forma clara y detallada el procedimiento práctico para aplicar los temas aprendidos durante la sesión (el paso a paso del cómo) , haciendo demostraciones para mejorar la comprensión de los/as estudiantes (d).", 2],
+  ["Realiza preguntas y repreguntas abiertas y dirigidas a estudiantes específicos, para verificar la comprensión de los temas tratados durante la mayor parte del tiempo de la sesión (e).", 3],
+  ["Logra que más de 75% de los/as estudiantes participen de forma activa (f), brindando ideas, opiniones, respondiendo sus preguntas o haciendo ellos/as preguntas durante la mayor parte de la sesión.", 3],
+  ["Realiza al menos una actividad de trabajo en parejas o en equipo en el que participan todos/as los/as estudiantes (g).", 3],
+  ["Emplea recursos didácticos, en al menos dos oportunidades distintas, considerando mínimamente uno TIC (h), para el desarrollo de los aprendizajes de la sesión.", 1],
+  ["Monitorea de forma activa el trabajo de los/as estudiantes, haciendo recorridos al aula, preguntando y repreguntado sobre los temas tratados.", 2],
+  ["Retroalimenta la participación de los/as estudiantes, a partir de preguntas de reflexión y brindando pistas para lograr que lleguen a la respuesta por sus propios medios.", 3],
+  ["Refuerza positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades.", 1]
+];
+
+const containerAula = document.getElementById("preguntas-aula");
+preguntasAula.forEach((pregunta, i) => {
+  const index = i + 1;
+  const peso = pregunta[1];
+  const div = document.createElement("div");
+  div.className = "pregunta";
+  div.innerHTML = `
+    <div class="campo"><label>Pregunta ${index}</label><p>${pregunta[0]}</p></div>
+    <div class="campo"><label>Peso:</label><input type="text" value="${peso}" readonly></div>
+    <div class="campo">
+      <label>Valoración:</label>
+      <select name="valoracion">
+        <option value="">Seleccione</option>
+        <option>Se observa</option>
+        <option>Se observa parcialmente</option>
+        <option>No se observa</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label>Puntaje:</label>
+      <select class="puntaje" data-peso="${peso}">
+        <option value="">Seleccione</option>
+        ${[...Array(peso * 2 + 1)].map((_, i) => `<option>${(i * 0.5).toFixed(1)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="campo"><label>Observaciones:</label><input type="text"></div>
+    <div class="campo"><label>Recomendaciones:</label><input type="text"></div>
+  `;
+  containerAula.appendChild(div);
+});
+
+document.querySelectorAll(".puntaje").forEach(select => {
+  select.addEventListener("change", () => {
+    let total = 0;
+    document.querySelectorAll(".puntaje").forEach(s => {
+      const val = parseFloat(s.value);
+      if (!isNaN(val)) total += val;
+    });
+    const porcentaje = (total / 25 * 100).toFixed(2);
+    document.getElementById("total-puntaje").value = total;
+    document.getElementById("porcentaje").value = porcentaje + "%";
+    const resultado = document.getElementById("resultado-final");
+    if (porcentaje >= 90) resultado.value = "DESTACADO";
+    else if (porcentaje >= 75) resultado.value = "LOGRADO";
+    else if (porcentaje >= 50) resultado.value = "EN PROCESO";
+    else if (porcentaje > 0) resultado.value = "EN INICIO";
+    else resultado.value = "";
+  });
+});
+
+function mostrarSegundaSeccion() {
+  document.getElementById("seccion-carpetas").classList.remove("hidden");
+}
+
+const preguntasCarpeta = [
+  "¿La versión del sílabo es la correcta?",
+  "¿Los datos del sílabo están actualizados?",
+  "¿El plan de clase está alineado con la sesión observada?",
+  "¿La asignación de fechas está actualizada?",
+  "¿Los planes de clase están cargados (ocultos al estudiante)?",
+  "¿Las PPT y recursos están alineados con lo ejecutado?",
+  "¿Se cuenta con el registro de asistencia actualizado?",
+  "¿Se cuenta con el registro de evaluaciones actualizado?"
+];
+
+const containerCarpeta = document.getElementById("preguntas-carpetas");
+preguntasCarpeta.forEach((pregunta, i) => {
+  const index = i + 1;
+  const div = document.createElement("div");
+  div.className = "pregunta";
+  div.innerHTML = `
+    <div class="campo"><label>Pregunta ${index}</label><p>${pregunta}</p></div>
+    <div class="campo"><label>Peso:</label><input type="text" value="12.5" readonly></div>
+    <div class="campo">
+      <label>Valoración:</label>
+      <select class="valoracion-carpetas">
+        <option value="">Seleccione</option>
+        <option>Se observa</option>
+        <option>Se observa parcialmente</option>
+        <option>No se observa</option>
+      </select>
+    </div>
+    <div class="campo"><label>Observaciones:</label><input type="text"></div>
+    <div class="campo"><label>Recomendaciones:</label><input type="text"></div>
+  `;
+  containerCarpeta.appendChild(div);
+});
+
+document.querySelectorAll(".valoracion-carpetas").forEach(select => {
+  select.addEventListener("change", () => {
+    const total = document.querySelectorAll(".valoracion-carpetas").length;
+    const observados = [...document.querySelectorAll(".valoracion-carpetas")]
+      .filter(s => s.value === "Se observa").length;
+    const porcentaje = ((observados / total) * 100).toFixed(2);
+    document.getElementById("porcentaje-carpetas").value = porcentaje + "%";
+    const resultado = document.getElementById("resultado-carpetas");
+    if (porcentaje == 100) resultado.value = "LOGRADO";
+    else if (porcentaje >= 50) resultado.value = "EN PROCESO";
+    else if (porcentaje > 0) resultado.value = "EN INICIO";
+    else resultado.value = "";
+  });
+});
+</script>
+<script>
+  function calcularPorcentajeAula() {
+    return parseFloat(document.getElementById("porcentaje").value) || 0;
+  }
+
+  function calcularPorcentajeCarpeta() {
+    return parseFloat(document.getElementById("porcentaje-carpetas").value) || 0;
+  }
+</script>
+
+<script>
+    document.getElementById("btn-enviar").addEventListener("click", async () => {
+        const filtros = {
+            ANO: sessionStorage.getItem("ano"),
+            PERIODO: sessionStorage.getItem("periodo"),
+            SEDE_CURSO: sessionStorage.getItem("sede_curso"),
+            Carrera: sessionStorage.getItem("carrera"),
+            Seccion: sessionStorage.getItem("seccion"),
+            Asignatura: sessionStorage.getItem("asignatura"),
+            INSTRUCTOR: sessionStorage.getItem("instructor"),
+            NRC: sessionStorage.getItem("nrc"),
+            Eval_Aula: calcularPorcentajeAula(),     // Implementa esta función según tu formulario
+            Eval_Carpeta: calcularPorcentajeCarpeta() // o null si no aplica
+        };
+
+        const response = await fetch("/guardar_resultado", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(filtros)
+        });
+
+        
+        const result = await response.json();
+        if (result.status === "ok") {
+            alert("Evaluación guardada exitosamente.");
+            window.location.href = "/";  // Redirige al inicio
+        } else {
+            alert("Error al guardar la evaluación: " + result.mensaje);
+        }
+
+    });
+</script>
+
+</body>
+</html>
+

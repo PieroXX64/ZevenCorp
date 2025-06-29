@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Procesar Asistencias OPERATIC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Procesar Asistencias OPERATIC</h1>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form id="asistencia-form" method="POST" action="/asistencias_operatic" enctype="multipart/form-data">
+            <label for="file">Selecciona archivo Excel (.xlsx):</label>
+            <input type="file" name="file" required><br><br>
+
+            <div id="rangos-container">
+                <div class="rango">
+                    <label>Fecha de inicio del rango:</label>
+                    <input type="date" name="rango_inicio[]" required>
+                    <label>Fecha de fin del rango:</label>
+                    <input type="date" name="rango_fin[]" required>
+                </div>
+            </div>
+
+            <button type="button" onclick="agregarRango()">Agregar otro rango</button><br><br>
+            <button type="submit">Procesar Asistencias</button>
+        </form>
+
+        <p style="text-align:center;"><a href="/">Volver al inicio</a></p>
+    </div>
+
+    <script>
+        function agregarRango() {
+            const container = document.getElementById('rangos-container');
+            const nuevoRango = document.createElement('div');
+            nuevoRango.className = 'rango';
+            nuevoRango.innerHTML = `
+                <label>Fecha de inicio del rango:</label>
+                <input type="date" name="rango_inicio[]" required>
+                <label>Fecha de fin del rango:</label>
+                <input type="date" name="rango_fin[]" required>
+                <button type="button" onclick="eliminarRango(this)">Eliminar</button><br><br>
+            `;
+            container.appendChild(nuevoRango);
+        }
+
+        function eliminarRango(boton) {
+            const rango = boton.parentElement;
+            rango.remove();
+        }
+    </script>
+</body>
+</html>

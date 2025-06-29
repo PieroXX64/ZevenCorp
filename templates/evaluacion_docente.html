@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Docente</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align:center;">Evaluación Docente</h1>
+        <form id="filtros-form">
+            <label for="ano">Año:</label>
+            <select id="ano" name="ano"><option value="">Seleccione</option></select>
+
+            <label for="periodo">Periodo:</label>
+            <select id="periodo" name="periodo"><option value="">Seleccione</option></select>
+
+            <label for="sede">Sede:</label>
+            <select id="sede" name="sede"><option value="">Seleccione</option></select>
+
+            <label for="carrera">Carrera:</label>
+            <select id="carrera" name="carrera"><option value="">Seleccione</option></select>
+
+            <label for="seccion">Sección:</label>
+            <select id="seccion" name="seccion"><option value="">Seleccione</option></select>
+
+            <label for="asignatura">Curso:</label>
+            <select id="asignatura" name="asignatura"><option value="">Seleccione</option></select>
+
+            <label for="instructor">Instructor:</label>
+            <select id="instructor" name="instructor"><option value="">Seleccione</option></select>
+
+            <div id="nrc-container">
+                <label for="nrc-display">NRC Asociado:</label>
+                <input type="text" id="nrc-display" readonly>
+
+                <label for="sede-curso-display">Sede del curso:</label>
+                <input type="text" id="sede-curso-display" readonly>
+            </div>
+
+            <div id="boton-iniciar-container" style="display: none;">
+                <button type="button" id="btn-iniciar-evaluacion">Iniciar Evaluación Docente</button>
+            </div>
+        </form>
+        <a href="/">Volver al inicio</a>
+    </div>
+
+<script>
+    async function cargarSelect(endpoint, selectId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`/${endpoint}?${query}`);
+        const data = await response.json();
+        const select = document.getElementById(selectId);
+        select.innerHTML = '<option value="">Seleccione</option>';
+        data.forEach(valor => {
+            const option = document.createElement('option');
+            option.value = valor;
+            option.textContent = valor;
+            select.appendChild(option);
+        });
+    }
+
+    document.getElementById('ano').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        cargarSelect('get_periodos', 'periodo', { ano });
+    });
+
+    document.getElementById('periodo').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        cargarSelect('get_sedes', 'sede', { ano, periodo });
+    });
+
+    document.getElementById('sede').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        const sede = document.getElementById('sede').value;
+        cargarSelect('get_carreras', 'carrera', { ano, periodo, sede });
+    });
+
+    document.getElementById('carrera').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        const sede = document.getElementById('sede').value;
+        const carrera = document.getElementById('carrera').value;
+        cargarSelect('get_secciones', 'seccion', { ano, periodo, sede, carrera });
+    });
+
+    document.getElementById('seccion').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        const sede = document.getElementById('sede').value;
+        const carrera = document.getElementById('carrera').value;
+        const seccion = document.getElementById('seccion').value;
+        cargarSelect('get_asignaturas', 'asignatura', { ano, periodo, sede, carrera, seccion });
+    });
+
+    document.getElementById('asignatura').addEventListener('change', () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        const sede = document.getElementById('sede').value;
+        const carrera = document.getElementById('carrera').value;
+        const seccion = document.getElementById('seccion').value;
+        const asignatura = document.getElementById('asignatura').value;
+        cargarSelect('get_instructores', 'instructor', { ano, periodo, sede, carrera, seccion, asignatura });
+    });
+
+    document.getElementById('instructor').addEventListener('change', async () => {
+        const ano = document.getElementById('ano').value;
+        const periodo = document.getElementById('periodo').value;
+        const sede = document.getElementById('sede').value;
+        const carrera = document.getElementById('carrera').value;
+        const seccion = document.getElementById('seccion').value;
+        const asignatura = document.getElementById('asignatura').value;
+        const instructor = document.getElementById('instructor').value;
+
+        if (ano && periodo && sede && carrera && seccion && asignatura && instructor) {
+            const query = new URLSearchParams({ ano, periodo, sede, carrera, seccion, asignatura, instructor });
+            const response = await fetch(`/get_nrc?${query}`);
+            const data = await response.json();
+            document.getElementById('nrc-display').value = data.nrc || "No encontrado";
+            document.getElementById('sede-curso-display').value = data.sede_curso || "No encontrado";
+            if (data.nrc) document.getElementById('boton-iniciar-container').style.display = 'block';
+            else document.getElementById('boton-iniciar-container').style.display = 'none';
+        }
+    });
+
+    document.getElementById('btn-iniciar-evaluacion').addEventListener('click', async () => {
+        const nrc = document.getElementById('nrc-display').value;
+        if (!nrc || nrc === "No encontrado" || nrc === "Error") return alert("NRC inválido");
+
+        // Guardar filtros en sessionStorage
+        sessionStorage.setItem("ano", document.getElementById("ano").value);
+        sessionStorage.setItem("periodo", document.getElementById("periodo").value);
+        sessionStorage.setItem("sede_curso", document.getElementById("sede-curso-display").value);
+        sessionStorage.setItem("carrera", document.getElementById("carrera").value);
+        sessionStorage.setItem("seccion", document.getElementById("seccion").value);
+        sessionStorage.setItem("asignatura", document.getElementById("asignatura").value);
+        sessionStorage.setItem("instructor", document.getElementById("instructor").value);
+        sessionStorage.setItem("nrc", nrc);
+
+        const response = await fetch(`/get_tipo_curso_por_nrc?nrc=${encodeURIComponent(nrc)}`);
+        const data = await response.json();
+
+        if (data.tipo_curso === 'P') window.location.href = `/formulario_p?nrc=${nrc}`;
+        else if (data.tipo_curso === 'TP') window.location.href = `/formulario_tp?nrc=${nrc}`;
+        else alert("Tipo de curso no reconocido");
+    });
+
+    document.addEventListener('DOMContentLoaded', () => cargarSelect('get_anos', 'ano'));
+</script>
+</body>
+</html>

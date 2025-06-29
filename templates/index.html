@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenido al sitio de procesamiento - ZEVEN CORP</h1>
+        <ul>
+            <li><a href="{{ url_for('evaluacion_docente') }}"><button>EVALUACIÓN DOCENTE</button></a></li>
+        </ul>
+    </div>
+</body>
+</html>
