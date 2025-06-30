@@ -2,7 +2,6 @@ import os
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import boto3
-from botocore.exceptions import NoCredentialsError
 from io import BytesIO
 
 app = Flask(__name__)
@@ -10,13 +9,6 @@ app = Flask(__name__)
 # Configuración de S3 (asegúrate de que las credenciales estén configuradas correctamente)
 s3_client = boto3.client('s3')
 BUCKET_NAME = 'tu-bucket-name'  # Reemplaza con el nombre de tu bucket en S3
-
-# Directorios (solo si necesitas trabajar con archivos locales, pero ya no será necesario con S3)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-PROCESADOS_FOLDER = os.path.join(BASE_DIR, 'procesados')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROCESADOS_FOLDER, exist_ok=True)
 
 # Variable global (para almacenar el DataFrame cargado)
 df_evaluacion = pd.DataFrame()
@@ -65,7 +57,7 @@ def upload_file():
 
 @app.route('/get_anos')
 def get_anos():
-    """Obtiene los años del archivo procesado."""
+    """Obtiene los años del archivo procesado."""  
     try:
         anos = sorted(df_evaluacion['ANO'].dropna().unique())
         anos = [int(a) for a in anos]  # Convertir a tipos nativos de Python
@@ -151,34 +143,9 @@ def get_secciones():
             return jsonify([])
     return jsonify([])
 
-@app.route('/get_asignaturas')
-def get_asignaturas():
-    """Obtiene las asignaturas del archivo procesado filtrados por los otros filtros."""
-    ano = request.args.get('ano')
-    periodo = request.args.get('periodo')
-    sede = request.args.get('sede')
-    carrera = request.args.get('carrera')
-    seccion = request.args.get('seccion')
-    if all([ano, periodo, sede, carrera, seccion]):
-        try:
-            df_filtrado = df_evaluacion[
-                (df_evaluacion['ANO'] == int(ano)) &
-                (df_evaluacion['PERIODO'] == int(periodo)) &
-                (df_evaluacion['SEDE_PRINCIPAL'] == sede) &
-                (df_evaluacion['Carrera'] == carrera) &
-                (df_evaluacion['Seccion'] == int(seccion))  # CORREGIDO AQUÍ
-            ]
-            asignaturas = sorted(df_filtrado['Asignatura'].dropna().unique())
-            asignaturas = [str(a) for a in asignaturas]
-            return jsonify(asignaturas)
-        except Exception as e:
-            print(f"[ERROR] al obtener asignaturas: {e}")
-            return jsonify([])
-    return jsonify([])
-
 @app.route('/guardar_resultado', methods=['POST'])
 def guardar_resultado():
-    """Guardar el resultado de la evaluación docente."""
+    """Guardar el resultado de la evaluación docente en S3."""  
     try:
         data = request.get_json()
         columnas = [
