@@ -11,6 +11,33 @@
         <ul>
             <li><a href="{{ url_for('evaluacion_docente') }}"><button>EVALUACIÓN DOCENTE</button></a></li>
         </ul>
+        
+        <!-- Botón para cargar los datos desde S3 -->
+        <button id="loadDataButton">Cargar Datos desde S3</button>
+
+        <!-- Script para manejar el clic en el botón y cargar los datos -->
+        <script>
+            document.getElementById('loadDataButton').addEventListener('click', function() {
+                // Realiza una solicitud POST para cargar los datos desde S3
+                fetch('/load_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Datos cargados correctamente.');
+                        // Aquí puedes cargar los filtros o hacer alguna otra acción
+                    } else if (data.status === 'info') {
+                        alert('Los datos ya están cargados.');
+                    } else {
+                        alert('Error al cargar los datos.');
+                    }
+                });
+            });
+        </script>
     </div>
 </body>
 </html>
