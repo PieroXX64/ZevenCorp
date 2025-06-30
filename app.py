@@ -154,6 +154,118 @@ def get_secciones():
             return jsonify([])
     return jsonify([])
 
+@app.route('/get_asignaturas')
+def get_asignaturas():
+    ano = request.args.get('ano')
+    periodo = request.args.get('periodo')
+    sede = request.args.get('sede')
+    carrera = request.args.get('carrera')
+    seccion = request.args.get('seccion')
+    if all([ano, periodo, sede, carrera, seccion]):
+        try:
+            print(f"[DEBUG] Filtros recibidos: año={ano}, periodo={periodo}, sede={sede}, carrera={carrera}, seccion={seccion}")
+            print("[DEBUG] Valores únicos en df_evaluacion['Carrera']:", df_evaluacion['Carrera'].unique())
+            print("[DEBUG] Valores únicos en df_evaluacion['Seccion']:", df_evaluacion['Seccion'].unique())
+            print("[DEBUG] Valores únicos en df_evaluacion['SEDE_PRINCIPAL']:", df_evaluacion['SEDE_PRINCIPAL'].unique())
+
+            df_filtrado = df_evaluacion[
+                (df_evaluacion['ANO'] == int(ano)) &
+                (df_evaluacion['PERIODO'] == int(periodo)) &
+                (df_evaluacion['SEDE_PRINCIPAL'] == sede) &
+                (df_evaluacion['Carrera'] == carrera) &
+                (df_evaluacion['Seccion'] == int(seccion))  # CORREGIDO AQUÍ
+            ]
+            asignaturas = sorted(df_filtrado['Asignatura'].dropna().unique())
+            asignaturas = [str(a) for a in asignaturas]
+            return jsonify(asignaturas)
+        except Exception as e:
+            print(f"[ERROR] al obtener asignaturas: {e}")
+            return jsonify([])
+    return jsonify([])
+
+@app.route('/get_instructores')
+def get_instructores():
+    ano = request.args.get('ano')
+    periodo = request.args.get('periodo')
+    sede = request.args.get('sede')
+    carrera = request.args.get('carrera')
+    seccion = request.args.get('seccion')
+    asignatura = request.args.get('asignatura')
+    
+    if all([ano, periodo, sede, carrera, seccion, asignatura]):
+        try:
+            df_filtrado = df_evaluacion[
+                (df_evaluacion['ANO'] == int(ano)) &
+                (df_evaluacion['PERIODO'] == int(periodo)) &
+                (df_evaluacion['SEDE_PRINCIPAL'] == sede) &
+                (df_evaluacion['Carrera'] == carrera) &
+                (df_evaluacion['Seccion'] == int(seccion)) &
+                (df_evaluacion['Asignatura'] == asignatura)
+            ]
+
+            instructores = sorted(df_filtrado['INSTRUCTOR'].dropna().unique())
+
+            # Lista de instructores a excluir
+            instructores_excluir = [
+                'LIM EOM AS INSTRUCTOR', 'LIM PM AS INSTRUCTOR', 'LIM SI AS INSTRUCTOR',
+                'LIM MMP AS INSTRUCTOR', 'LIM MSEII AS INSTRUCTOR',
+                'AQP EOM AS INSTRUCTOR', 'AQP SI AS INSTRUCTOR', 'AQP PM AS INSTRUCTOR',
+                'AQP MMP AS INSTRUCTOR', 'AQP MSEII AS INSTRUCTOR'
+            ]
+
+            instructores_filtrados = [i for i in instructores if i not in instructores_excluir]
+
+            return jsonify(instructores_filtrados)
+        except Exception as e:
+            print(f"[ERROR] al obtener instructores: {e}")
+            return jsonify([])
+    
+    return jsonify([])
+
+@app.route('/get_nrc')
+def get_nrc():
+    try:
+        filtros = {
+            'ANO': int(request.args.get('ano')),
+            'PERIODO': int(request.args.get('periodo')),
+            'SEDE_PRINCIPAL': request.args.get('sede'),
+            'Carrera': request.args.get('carrera'),
+            'Seccion': int(request.args.get('seccion')),
+            'Asignatura': request.args.get('asignatura'),
+            'INSTRUCTOR': request.args.get('instructor')
+        }
+
+        df_filtrado = df_evaluacion.copy()
+
+        for k, v in filtros.items():
+            if v is not None:
+                df_filtrado = df_filtrado[df_filtrado[k] == v]
+
+        if not df_filtrado.empty:
+            return jsonify({
+                'nrc': str(df_filtrado.iloc[0]['NRC']),
+                'sede_curso': str(df_filtrado.iloc[0]['SEDE_CURSO'])
+            })
+
+        return jsonify({'nrc': None, 'sede_curso': None})
+    
+    except Exception as e:
+        print(f"[ERROR] en /get_nrc: {e}")
+        return jsonify({'nrc': None, 'sede_curso': None})
+
+@app.route('/get_tipo_curso_por_nrc')
+def get_tipo_curso_por_nrc():
+    nrc = request.args.get('nrc')
+    if not nrc:
+        return jsonify({'tipo_curso': None})
+    
+    df_filtrado = df_evaluacion[df_evaluacion['NRC'].astype(str) == str(nrc)]
+
+    if not df_filtrado.empty:
+        tipo = df_filtrado.iloc[0]['Tipo_Curso']
+        return jsonify({'tipo_curso': tipo})
+    return jsonify({'tipo_curso': None})
+
 @app.route('/guardar_resultado', methods=['POST'])
 def guardar_resultado():
     """Guardar el resultado de la evaluación docente en S3."""  
@@ -172,7 +284,15 @@ def guardar_resultado():
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"status": "error", "mensaje": str(e)})
+@app.route('/formulario_p')
+def formulario_p():
+    nrc = request.args.get('nrc')
+    return render_template('formulario_p.html', nrc=nrc)
 
+@app.route('/formulario_tp')
+def formulario_tp():
+    nrc = request.args.get('nrc')
+    return render_template('formulario_tp.html', nrc=nrc)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
     app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
