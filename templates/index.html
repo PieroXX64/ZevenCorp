@@ -12,5 +12,12 @@
             <li><a href="{{ url_for('evaluacion_docente') }}"><button>EVALUACIÓN DOCENTE</button></a></li>
         </ul>
     </div>
+
+<form id="upload-form" enctype="multipart/form-data">
+    <label for="file-upload">Cargar archivo planificacion_academica_proc.xlsx</label>
+    <input type="file" id="file-upload" name="file" required>
+    <button type="submit">Subir archivo</button>
+</form>
+
 </body>
 </html>
