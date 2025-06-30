@@ -163,6 +163,8 @@ def guardar_resultado():
         return jsonify({"status": "error", "mensaje": str(e)})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
+    app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
+)
     
 
