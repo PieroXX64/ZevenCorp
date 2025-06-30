@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # Configuración de S3 (asegúrate de que las credenciales estén configuradas correctamente)
 s3_client = boto3.client('s3')
-BUCKET_NAME = 'tu-bucket-name'  # Reemplaza con el nombre de tu bucket en S3
+BUCKET_NAME = 'zeven-corp'  # Reemplaza con el nombre de tu bucket en S3
 
 # Variable global (para almacenar el DataFrame cargado)
 df_evaluacion = pd.DataFrame()
