@@ -29,31 +29,15 @@ def cargar_archivo_s3(nombre_archivo):
 
 @app.route('/')
 def home():
+    # Cargar el archivo automáticamente desde S3
+    cargar_archivo_s3('planificacion_academica_proc.xlsx')
+    
+    # Renderizar la página con los datos ya cargados
     return render_template('index.html')
 
 @app.route('/evaluacion_docente')
 def evaluacion_docente():
     return render_template('evaluacion_docente.html')
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    """Recibe el archivo procesado desde la interfaz web y lo sube a S3."""
-    if 'file' not in request.files:
-        return "No file part", 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
-
-    try:
-        # Subir archivo a S3
-        s3_client.upload_fileobj(file, BUCKET_NAME, file.filename)
-        # Cargar el archivo procesado desde S3
-        cargar_archivo_s3(file.filename)
-        return "Archivo cargado y procesado correctamente", 200
-    except Exception as e:
-        print(f"Error al cargar el archivo a S3: {e}")
-        return "Error al cargar el archivo a S3", 500
 
 @app.route('/get_anos')
 def get_anos():
@@ -165,7 +149,3 @@ def guardar_resultado():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
     app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
-
-
-
-
