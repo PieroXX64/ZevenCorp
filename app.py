@@ -1,139 +1,40 @@
 import os
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
-from datetime import datetime
+import boto3
+from botocore.exceptions import NoCredentialsError
+from io import BytesIO
 
 app = Flask(__name__)
 
-# Directorios
+# Configuración de S3 (asegúrate de que las credenciales estén configuradas correctamente)
+s3_client = boto3.client('s3')
+BUCKET_NAME = 'tu-bucket-name'  # Reemplaza con el nombre de tu bucket en S3
+
+# Directorios (solo si necesitas trabajar con archivos locales, pero ya no será necesario con S3)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 PROCESADOS_FOLDER = os.path.join(BASE_DIR, 'procesados')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESADOS_FOLDER, exist_ok=True)
 
-MEMORIA_NRC_PATH = os.path.join(PROCESADOS_FOLDER, 'nrc_memoria.xlsx')
-ARCHIVO_PLANIFICACION = os.path.join(UPLOAD_FOLDER, 'planificacion_academica.xlsx')
-ARCHIVO_PROCESADO = os.path.join(PROCESADOS_FOLDER, 'planificacion_academica_proc.xlsx')
+# Variable global (para almacenar el DataFrame cargado)
+df_evaluacion = pd.DataFrame()
 
-# Variable global
-if os.path.exists(ARCHIVO_PROCESADO):
-    df_evaluacion = pd.read_excel(ARCHIVO_PROCESADO)
-else:
-    df_evaluacion = pd.DataFrame()
-
-def generar_nrcs(df):
-    memoria_nrc = {}
-    if os.path.exists(MEMORIA_NRC_PATH):
-        memoria_nrc_df = pd.read_excel(MEMORIA_NRC_PATH)
-        for _, row in memoria_nrc_df.iterrows():
-            key = (row['ANO'], row['PERIODO'], row['Codigo_Carrera'], row['Codigo_Curso'], row['Seccion'])
-            memoria_nrc[key] = row['NRC']
-        last_nrc = memoria_nrc_df['NRC'].max()
-    else:
-        last_nrc = 999
-
-    nuevos_nrcs = []
-    for _, row in df.iterrows():
-        key = (row['ANO'], row['PERIODO'], row['Codigo_Carrera'], row['Codigo_Curso'], row['Seccion'])
-        if key in memoria_nrc:
-            nrc = memoria_nrc[key]
-        else:
-            last_nrc += 1
-            nrc = last_nrc
-            memoria_nrc[key] = nrc
-        nuevos_nrcs.append(nrc)
-
-    df['NRC'] = nuevos_nrcs
-
-    memoria_actualizada = pd.DataFrame([
-        {'ANO': k[0], 'PERIODO': k[1], 'Codigo_Carrera': k[2], 'Codigo_Curso': k[3], 'Seccion': k[4], 'NRC': v}
-        for k, v in memoria_nrc.items()
-    ])
-    memoria_actualizada.to_excel(MEMORIA_NRC_PATH, index=False)
-
-    return df
-
-def procesar_planificacion():
+def cargar_archivo_s3(nombre_archivo):
+    """Leer archivo procesado desde S3 y cargarlo en el DataFrame."""
     global df_evaluacion
     try:
-        print(f"[INFO] Leyendo archivo local: {ARCHIVO_PLANIFICACION}")
-        df = pd.read_excel(ARCHIVO_PLANIFICACION)
+        # Descargar el archivo desde S3
+        file_obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=nombre_archivo)
+        file_data = file_obj['Body'].read()
 
-        # Definir sedes principales
-        carreras_fchb = ['AQPEOM', 'AQPSI', 'AQPPM', 'AQPMMP', 'AQPMSEII']
-        carreras_abq = ['LIMEOM', 'LIMSI', 'LIMPM']
-        carreras_irq = ['LIMMMP', 'LIMMSEII']
-
-        def sede_principal(codigo):
-            if codigo in carreras_fchb:
-                return 'FCHB'
-            elif codigo in carreras_abq:
-                return 'ABQ'
-            elif codigo in carreras_irq:
-                return 'IRQ'
-            return pd.NA
-
-        df['SEDE_PRINCIPAL'] = df['Codigo_Carrera'].apply(sede_principal)
-
-        empleabilidad_cursos = [
-            'MARCA PROFESIONAL', 'COMUNICACIÓN PROFESIONAL', 'LIDERAZGO PROFESIONAL',
-            'INNOVACIÓN TECNOLÓGICA', 'INGLÉS TÉCNICO', 'INFORMÁTICA BÁSICA'
-        ]
-        empleabilidad_cursos = [c.upper() for c in empleabilidad_cursos]
-
-        df['SEDE_CURSO'] = df.apply(
-            lambda row: 'EMPLEABILIDAD' if str(row['Asignatura']).upper() in empleabilidad_cursos else row['SEDE_PRINCIPAL'],
-            axis=1
-        )
-
-        def modalidad(valor):
-            try:
-                valor = int(valor)
-            except:
-                return pd.NA
-            if valor in [1, 3]:
-                return 'PRESENCIAL'
-            elif valor == 2:
-                return 'VIRTUAL'
-            return pd.NA
-
-        df['MODALIDAD'] = df['Periodo_Nivel'].apply(modalidad)
-
-        def tipo_curso(asignatura):
-            asignatura = str(asignatura).upper()
-            if asignatura.startswith('PROYECTO') or asignatura.startswith('EFSRT'):
-                return 'P'
-            return 'TP'
-
-        df['Tipo_Curso'] = df['Asignatura'].apply(tipo_curso)
-
-        df['INSTRUCTOR'] = df['Apellido_Docente'].astype(str) + ' ' + df['Nombre_Docente'].astype(str)
-
-        if 'Carrera' not in df.columns:
-            df['Carrera'] = df['Codigo_Carrera']
-
-        if 'FechaCierre' in df.columns:
-            col_index = df.columns.get_loc('FechaCierre') + 1
-            nuevas_columnas = ['SEDE_PRINCIPAL', 'SEDE_CURSO', 'MODALIDAD', 'Tipo_Curso', 'INSTRUCTOR']
-            nuevas_vals = df[nuevas_columnas].copy()
-            df.drop(columns=nuevas_columnas, inplace=True)
-            for i, col in enumerate(nuevas_columnas):
-                df.insert(col_index + i, col, nuevas_vals[col])
-        else:
-            print("[ADVERTENCIA] Columna 'FechaCierre' no encontrada. Columnas adicionales no reordenadas.")
-
-        df = generar_nrcs(df)
-
-        output_path = os.path.join(PROCESADOS_FOLDER, 'planificacion_academica_proc.xlsx')
-        df.to_excel(output_path, index=False)
-        print(f"[INFO] Archivo procesado y guardado como: {output_path}")
-        df_evaluacion = df
-
+        # Leerlo con pandas
+        df_evaluacion = pd.read_excel(BytesIO(file_data))
+        print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
     except Exception as e:
-        print(f"[ERROR] Error al procesar archivo local: {e}")
+        print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
 
-# --- Rutas Flask ---
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -142,8 +43,29 @@ def home():
 def evaluacion_docente():
     return render_template('evaluacion_docente.html')
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    """Recibe el archivo procesado desde la interfaz web y lo sube a S3."""
+    if 'file' not in request.files:
+        return "No file part", 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+
+    try:
+        # Subir archivo a S3
+        s3_client.upload_fileobj(file, BUCKET_NAME, file.filename)
+        # Cargar el archivo procesado desde S3
+        cargar_archivo_s3(file.filename)
+        return "Archivo cargado y procesado correctamente", 200
+    except Exception as e:
+        print(f"Error al cargar el archivo a S3: {e}")
+        return "Error al cargar el archivo a S3", 500
+
 @app.route('/get_anos')
 def get_anos():
+    """Obtiene los años del archivo procesado."""
     try:
         anos = sorted(df_evaluacion['ANO'].dropna().unique())
         anos = [int(a) for a in anos]  # Convertir a tipos nativos de Python
@@ -154,6 +76,7 @@ def get_anos():
 
 @app.route('/get_periodos')
 def get_periodos():
+    """Obtiene los periodos del archivo procesado filtrados por año."""
     ano = request.args.get('ano')
     if ano:
         try:
@@ -167,6 +90,7 @@ def get_periodos():
 
 @app.route('/get_sedes')
 def get_sedes():
+    """Obtiene las sedes del archivo procesado filtrados por año y periodo."""
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
     if ano and periodo:
@@ -185,6 +109,7 @@ def get_sedes():
 
 @app.route('/get_carreras')
 def get_carreras():
+    """Obtiene las carreras del archivo procesado filtrados por año, periodo y sede."""
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
     sede = request.args.get('sede')
@@ -205,6 +130,7 @@ def get_carreras():
 
 @app.route('/get_secciones')
 def get_secciones():
+    """Obtiene las secciones del archivo procesado filtrados por año, periodo, sede y carrera."""
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
     sede = request.args.get('sede')
@@ -227,6 +153,7 @@ def get_secciones():
 
 @app.route('/get_asignaturas')
 def get_asignaturas():
+    """Obtiene las asignaturas del archivo procesado filtrados por los otros filtros."""
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
     sede = request.args.get('sede')
@@ -234,11 +161,6 @@ def get_asignaturas():
     seccion = request.args.get('seccion')
     if all([ano, periodo, sede, carrera, seccion]):
         try:
-            print(f"[DEBUG] Filtros recibidos: año={ano}, periodo={periodo}, sede={sede}, carrera={carrera}, seccion={seccion}")
-            print("[DEBUG] Valores únicos en df_evaluacion['Carrera']:", df_evaluacion['Carrera'].unique())
-            print("[DEBUG] Valores únicos en df_evaluacion['Seccion']:", df_evaluacion['Seccion'].unique())
-            print("[DEBUG] Valores únicos en df_evaluacion['SEDE_PRINCIPAL']:", df_evaluacion['SEDE_PRINCIPAL'].unique())
-
             df_filtrado = df_evaluacion[
                 (df_evaluacion['ANO'] == int(ano)) &
                 (df_evaluacion['PERIODO'] == int(periodo)) &
@@ -254,91 +176,9 @@ def get_asignaturas():
             return jsonify([])
     return jsonify([])
 
-@app.route('/get_instructores')
-def get_instructores():
-    ano = request.args.get('ano')
-    periodo = request.args.get('periodo')
-    sede = request.args.get('sede')
-    carrera = request.args.get('carrera')
-    seccion = request.args.get('seccion')
-    asignatura = request.args.get('asignatura')
-    
-    if all([ano, periodo, sede, carrera, seccion, asignatura]):
-        try:
-            df_filtrado = df_evaluacion[
-                (df_evaluacion['ANO'] == int(ano)) &
-                (df_evaluacion['PERIODO'] == int(periodo)) &
-                (df_evaluacion['SEDE_PRINCIPAL'] == sede) &
-                (df_evaluacion['Carrera'] == carrera) &
-                (df_evaluacion['Seccion'] == int(seccion)) &
-                (df_evaluacion['Asignatura'] == asignatura)
-            ]
-
-            instructores = sorted(df_filtrado['INSTRUCTOR'].dropna().unique())
-
-            # Lista de instructores a excluir
-            instructores_excluir = [
-                'LIM EOM AS INSTRUCTOR', 'LIM PM AS INSTRUCTOR', 'LIM SI AS INSTRUCTOR',
-                'LIM MMP AS INSTRUCTOR', 'LIM MSEII AS INSTRUCTOR',
-                'AQP EOM AS INSTRUCTOR', 'AQP SI AS INSTRUCTOR', 'AQP PM AS INSTRUCTOR',
-                'AQP MMP AS INSTRUCTOR', 'AQP MSEII AS INSTRUCTOR'
-            ]
-
-            instructores_filtrados = [i for i in instructores if i not in instructores_excluir]
-
-            return jsonify(instructores_filtrados)
-        except Exception as e:
-            print(f"[ERROR] al obtener instructores: {e}")
-            return jsonify([])
-    
-    return jsonify([])
-
-@app.route('/get_nrc')
-def get_nrc():
-    try:
-        filtros = {
-            'ANO': int(request.args.get('ano')),
-            'PERIODO': int(request.args.get('periodo')),
-            'SEDE_PRINCIPAL': request.args.get('sede'),
-            'Carrera': request.args.get('carrera'),
-            'Seccion': int(request.args.get('seccion')),
-            'Asignatura': request.args.get('asignatura'),
-            'INSTRUCTOR': request.args.get('instructor')
-        }
-
-        df_filtrado = df_evaluacion.copy()
-
-        for k, v in filtros.items():
-            if v is not None:
-                df_filtrado = df_filtrado[df_filtrado[k] == v]
-
-        if not df_filtrado.empty:
-            return jsonify({
-                'nrc': str(df_filtrado.iloc[0]['NRC']),
-                'sede_curso': str(df_filtrado.iloc[0]['SEDE_CURSO'])
-            })
-
-        return jsonify({'nrc': None, 'sede_curso': None})
-    
-    except Exception as e:
-        print(f"[ERROR] en /get_nrc: {e}")
-        return jsonify({'nrc': None, 'sede_curso': None})
-
-@app.route('/get_tipo_curso_por_nrc')
-def get_tipo_curso_por_nrc():
-    nrc = request.args.get('nrc')
-    if not nrc:
-        return jsonify({'tipo_curso': None})
-    
-    df_filtrado = df_evaluacion[df_evaluacion['NRC'].astype(str) == str(nrc)]
-
-    if not df_filtrado.empty:
-        tipo = df_filtrado.iloc[0]['Tipo_Curso']
-        return jsonify({'tipo_curso': tipo})
-    return jsonify({'tipo_curso': None})
-
 @app.route('/guardar_resultado', methods=['POST'])
 def guardar_resultado():
+    """Guardar el resultado de la evaluación docente."""
     try:
         data = request.get_json()
         columnas = [
@@ -348,29 +188,13 @@ def guardar_resultado():
         ]
         nuevo_registro = {col: data.get(col, "") for col in columnas}
 
-        ruta_archivo = os.path.join("procesados", "evaluacion_docente_proc.xlsx")
-        if os.path.exists(ruta_archivo):
-            df_existente = pd.read_excel(ruta_archivo)
-            df_existente = pd.concat([df_existente, pd.DataFrame([nuevo_registro])], ignore_index=True)
-        else:
-            df_existente = pd.DataFrame([nuevo_registro])
-
-        df_existente.to_excel(ruta_archivo, index=False)
+        # Guardar el archivo procesado como evaluacion_docente_proc.xlsx en S3
+        ruta_archivo = 'evaluacion_docente_proc.xlsx'  # Ruta en S3, solo el nombre de archivo en este caso
+        s3_client.put_object(Body=pd.DataFrame([nuevo_registro]).to_excel(index=False), Bucket=BUCKET_NAME, Key=ruta_archivo)
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"status": "error", "mensaje": str(e)})
 
-
-@app.route('/formulario_p')
-def formulario_p():
-    nrc = request.args.get('nrc')
-    return render_template('formulario_p.html', nrc=nrc)
-
-@app.route('/formulario_tp')
-def formulario_tp():
-    nrc = request.args.get('nrc')
-    return render_template('formulario_tp.html', nrc=nrc)
-
 if __name__ == '__main__':
-    procesar_planificacion()
     app.run(debug=True)
+
