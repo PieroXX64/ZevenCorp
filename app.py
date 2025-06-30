@@ -265,7 +265,8 @@ def get_tipo_curso_por_nrc():
         tipo = df_filtrado.iloc[0]['Tipo_Curso']
         return jsonify({'tipo_curso': tipo})
     return jsonify({'tipo_curso': None})
-
+    
+import io
 @app.route('/guardar_resultado', methods=['POST'])
 def guardar_resultado():
     """Guardar el resultado de la evaluación docente en S3."""  
