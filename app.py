@@ -24,15 +24,16 @@ def cargar_archivo_s3(nombre_archivo):
         # Leerlo con pandas
         df_evaluacion = pd.read_excel(BytesIO(file_data))
         print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
+        print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")  # Verifica los datos cargados
     except Exception as e:
         print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
 
 @app.route('/')
 def home():
-    # Cargar el archivo automáticamente desde S3
+    # Cargar el archivo automáticamente desde S3 al acceder a la página principal
     cargar_archivo_s3('planificacion_academica_proc.xlsx')
     
-    # Renderizar la página con los datos ya cargados
+    # Renderizar la página con los datos ya cargados desde S3
     return render_template('index.html')
 
 @app.route('/evaluacion_docente')
@@ -45,6 +46,7 @@ def get_anos():
     try:
         anos = sorted(df_evaluacion['ANO'].dropna().unique())
         anos = [int(a) for a in anos]  # Convertir a tipos nativos de Python
+        print(f"[INFO] Años disponibles en el archivo: {anos}")
         return jsonify(anos)
     except Exception as e:
         print(f"[ERROR] al obtener años: {e}")
@@ -58,6 +60,7 @@ def get_periodos():
         try:
             periodos = sorted(df_evaluacion[df_evaluacion['ANO'] == int(ano)]['PERIODO'].dropna().unique())
             periodos = [int(p) for p in periodos]  # Asegurar tipos nativos
+            print(f"[INFO] Periodos disponibles para el año {ano}: {periodos}")
             return jsonify(periodos)
         except Exception as e:
             print(f"[ERROR] al obtener periodos: {e}")
@@ -77,6 +80,7 @@ def get_sedes():
             ]
             sedes = sorted(df_filtrado['SEDE_PRINCIPAL'].dropna().unique())
             sedes = [str(s) for s in sedes]
+            print(f"[INFO] Sedes disponibles para el año {ano} y periodo {periodo}: {sedes}")
             return jsonify(sedes)
         except Exception as e:
             print(f"[ERROR] al obtener sedes: {e}")
@@ -98,6 +102,7 @@ def get_carreras():
             ]
             carreras = sorted(df_filtrado['Carrera'].dropna().unique())
             carreras = [str(c) for c in carreras]
+            print(f"[INFO] Carreras disponibles para el año {ano}, periodo {periodo} y sede {sede}: {carreras}")
             return jsonify(carreras)
         except Exception as e:
             print(f"[ERROR] al obtener carreras: {e}")
@@ -121,6 +126,7 @@ def get_secciones():
             ]
             secciones = sorted(df_filtrado['Seccion'].dropna().unique())
             secciones = [str(s) for s in secciones]
+            print(f"[INFO] Secciones disponibles para el año {ano}, periodo {periodo}, sede {sede} y carrera {carrera}: {secciones}")
             return jsonify(secciones)
         except Exception as e:
             print(f"[ERROR] al obtener secciones: {e}")
@@ -149,3 +155,4 @@ def guardar_resultado():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
     app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
+
