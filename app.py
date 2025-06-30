@@ -278,11 +278,23 @@ def guardar_resultado():
         ]
         nuevo_registro = {col: data.get(col, "") for col in columnas}
 
+        # Crear el DataFrame con el nuevo registro
+        df_nuevo_registro = pd.DataFrame([nuevo_registro])
+
+        # Crear un objeto BytesIO para almacenar el archivo en memoria
+        output = io.BytesIO()
+
+        # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_nuevo_registro.to_excel(writer, index=False, sheet_name='EvaluacionDocente')
+
         # Guardar el archivo procesado como evaluacion_docente_proc.xlsx en S3
-        ruta_archivo = 'evaluacion_docente_proc.xlsx'  # Ruta en S3, solo el nombre de archivo en este caso
-        s3_client.put_object(Body=pd.DataFrame([nuevo_registro]).to_excel(index=False), Bucket=BUCKET_NAME, Key=ruta_archivo)
+        output.seek(0)  # Volver al principio del archivo en memoria
+        s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_proc.xlsx')
+
         return jsonify({"status": "ok"})
     except Exception as e:
+        print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
 @app.route('/formulario_p')
 def formulario_p():
