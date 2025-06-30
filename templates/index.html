@@ -14,10 +14,33 @@
     </div>
 
 <form id="upload-form" enctype="multipart/form-data">
-    <label for="file-upload">Cargar archivo planificacion_academica_proc.xlsx</label>
+    <label for="file-upload">Cargar archivo origen</label>
     <input type="file" id="file-upload" name="file" required>
     <button type="submit">Subir archivo</button>
 </form>
+<div id="status"></div>  <!-- Aquí aparecerá el mensaje de estado -->
+    
+    <script>
+        // Esto es opcional, para mostrar el estado del archivo cargado
+        const form = document.getElementById("upload-form");
+        const statusDiv = document.getElementById("status");
 
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const response = await fetch('/cargar_planificacion', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (result.status === 'ok') {
+                statusDiv.innerHTML = 'Archivo cargado correctamente y guardado en S3.';
+            } else {
+                statusDiv.innerHTML = 'Error al cargar el archivo: ' + result.message;
+            }
+        });
+    </script>
 </body>
 </html>
