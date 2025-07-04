@@ -170,6 +170,39 @@ document.getElementById("continuar-btn").addEventListener("click", () => {
   document.getElementById("carpeta").classList.remove("hidden");
 });
 
+const preguntasCarpeta = [
+  "¿La versión de los sílabos es la correcta y corresponde a los cursos relacionados al proyecto?",
+  "¿Los datos de los sílabos están actualizados?",
+  "¿El plan del proyecto integrador está alineado con la sesión observada?",
+  "¿La asignación de fechas de entrega de trabajos y evaluaciones está debidamente actualizada?",
+  "¿El plan del proyecto se encuentra debidamente cargado y visible para el estudiante?",
+  "¿El PPT (...) y/o recursos complementarios... están alineados a lo ejecutado?",
+  "¿Se cuenta con el registro de asistencia actualizado?",
+  "¿Se cuenta con el registro de evaluaciones actualizado?"
+];
+
+const contenedorCarpeta = document.getElementById("preguntas-carpetas");
+preguntasCarpeta.forEach((pregunta, i) => {
+  const div = document.createElement("div");
+  div.className = "criterio";
+  div.innerHTML = `
+    <div class="campo"><label>Pregunta ${i + 1}</label><p>${pregunta}</p></div>
+    <div class="campo"><label>Peso:</label><input type="text" value="12.5" readonly></div>
+    <div class="campo">
+      <label>Valoración:</label>
+      <select class="valoracion">
+        <option value="">Seleccione</option>
+        <option>Se observa</option>
+        <option>Se observa parcialmente</option>
+        <option>No se observa</option>
+      </select>
+    </div>
+    <div class="campo"><label>Observaciones:</label><textarea></textarea></div>
+    <div class="campo"><label>Recomendaciones:</label><textarea></textarea></div>
+  `;
+  contenedorCarpeta.appendChild(div);
+});
+
 // Función para enviar la evaluación
 document.getElementById("btn-enviar").addEventListener("click", async () => {
   const filtros = {
