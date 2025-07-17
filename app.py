@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 import boto3
 from io import BytesIO
 import datetime  # Necesario para la marca de tiempo en los logs
@@ -14,10 +14,12 @@ BUCKET_NAME = 'zeven-corp'  # Asegúrate de que este es el nombre correcto de tu
 
 # Variable global para almacenar el DataFrame cargado
 df_evaluacion = pd.DataFrame()
+is_data_loaded = False  # Variable global para controlar si los datos están cargados
 
-def cargar_archivo_s3(nombre_archivo):
+def cargar_archivo_s3():
     """Leer archivo procesado desde S3 y cargarlo en el DataFrame global."""
-    global df_evaluacion
+    global df_evaluacion, is_data_loaded
+    nombre_archivo = 'planificacion_academica_proc.xlsx'  # Aseguramos que el nombre del archivo sea el correcto
     try:
         print(f"[INFO] Intentando descargar el archivo {nombre_archivo} desde S3.")
         
@@ -29,10 +31,11 @@ def cargar_archivo_s3(nombre_archivo):
         df_evaluacion = pd.read_excel(BytesIO(file_data))
         print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
         print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
-        session['data_loaded'] = True  # Marcamos que los datos se han cargado
+        is_data_loaded = True  # Marcamos que los datos se han cargado globalmente
     except Exception as e:
         print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
-        session['data_loaded'] = False
+        is_data_loaded = False  # En caso de error, se marca como no cargado
+
 
 @app.route('/')
 def home():
@@ -311,9 +314,10 @@ def formulario_tp():
 @app.route('/cronjob_load_data', methods=['GET'])
 def cronjob_load_data():
     """Este endpoint se ejecutará a través del cronjob para cargar automáticamente los datos desde S3."""
-    if not session.get('data_loaded', False):  # Verifica si los datos ya han sido cargados
+    global is_data_loaded
+    if not is_data_loaded:  # Verifica si los datos ya han sido cargados
         cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Cargar datos desde S3
-        if session.get('data_loaded', False):
+        if is_data_loaded:
             print(f"[INFO] Datos cargados correctamente desde S3 a las {datetime.datetime.now()}.")
             return jsonify({"status": "success", "message": "Datos cargados correctamente"})
         else:
@@ -322,7 +326,7 @@ def cronjob_load_data():
     else:
         print(f"[INFO] Los datos ya están cargados.")
         return jsonify({"status": "info", "message": "Los datos ya están cargados"})
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
     app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
-
