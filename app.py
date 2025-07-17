@@ -3,6 +3,7 @@ import pandas as pd
 from flask import Flask, render_template, request, jsonify, session
 import boto3
 from io import BytesIO
+import datetime  # Necesario para la marca de tiempo en los logs
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Necesario para manejar sesiones
@@ -306,6 +307,21 @@ def formulario_p():
 def formulario_tp():
     nrc = request.args.get('nrc')
     return render_template('formulario_tp.html', nrc=nrc)
+
+@app.route('/cronjob_load_data', methods=['GET'])
+def cronjob_load_data():
+    """Este endpoint se ejecutará a través del cronjob para cargar automáticamente los datos desde S3."""
+    if not session.get('data_loaded', False):  # Verifica si los datos ya han sido cargados
+        cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Cargar datos desde S3
+        if session.get('data_loaded', False):
+            print(f"[INFO] Datos cargados correctamente desde S3 a las {datetime.datetime.now()}.")
+            return jsonify({"status": "success", "message": "Datos cargados correctamente"})
+        else:
+            print(f"[ERROR] Error al cargar los datos desde S3.")
+            return jsonify({"status": "error", "message": "Error al cargar los datos desde S3"})
+    else:
+        print(f"[INFO] Los datos ya están cargados.")
+        return jsonify({"status": "info", "message": "Los datos ya están cargados"})
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
     app.run(debug=True, host="0.0.0.0", port=port)  # Escuchar en todas las interfaces de red
