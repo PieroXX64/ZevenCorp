@@ -18,7 +18,7 @@ is_data_loaded = False  # Variable global para controlar si los datos están car
 
 def cargar_archivo_s3(nombre_archivo):
     """Leer archivo procesado desde S3 y cargarlo en el DataFrame global."""
-    global df_evaluacion
+    global df_evaluacion, is_data_loaded
     try:
         print(f"[INFO] Intentando descargar el archivo {nombre_archivo} desde S3.")
         
@@ -30,10 +30,10 @@ def cargar_archivo_s3(nombre_archivo):
         df_evaluacion = pd.read_excel(BytesIO(file_data))
         print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
         print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
-        session['data_loaded'] = True  # Marcamos que los datos se han cargado
+        is_data_loaded = True  # Marcamos que los datos se han cargado
     except Exception as e:
         print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
-        session['data_loaded'] = False
+        is_data_loaded = False
 
 
 @app.route('/')
@@ -48,9 +48,10 @@ def evaluacion_docente():
 @app.route('/load_data', methods=['POST'])
 def load_data():
     """Carga el archivo desde S3 al hacer clic en el botón."""
-    if not session.get('data_loaded', False):  # Verifica si los datos ya han sido cargados
+    global is_data_loaded
+    if not is_data_loaded:  # Verifica si los datos ya han sido cargados
         cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Cargar datos desde S3
-        if session.get('data_loaded', False):
+        if is_data_loaded:
             return jsonify({"status": "success", "message": "Datos cargados correctamente"})
         else:
             return jsonify({"status": "error", "message": "Error al cargar los datos desde S3"})
@@ -313,9 +314,10 @@ def formulario_tp():
 @app.route('/cronjob_load_data', methods=['GET'])
 def cronjob_load_data():
     """Este endpoint se ejecutará a través del cronjob para cargar automáticamente los datos desde S3."""
-    if not session.get('data_loaded', False):  # Verifica si los datos ya han sido cargados
+    global is_data_loaded
+    if not is_data_loaded:  # Verifica si los datos ya han sido cargados
         cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Ahora se pasa el nombre del archivo
-        if session.get('data_loaded', False):
+        if is_data_loaded:
             print(f"[INFO] Datos cargados correctamente desde S3 a las {datetime.datetime.now()}.")
             return jsonify({"status": "success", "message": "Datos cargados correctamente"})
         else:
