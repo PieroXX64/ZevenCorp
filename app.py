@@ -61,7 +61,8 @@ def load_data():
 @app.route('/get_anos')
 def get_anos():
     """Obtiene los años del archivo procesado."""  
-    if session.get('data_loaded', False):
+    global is_data_loaded
+    if is_data_loaded:
         try:
             anos = sorted(df_evaluacion['ANO'].dropna().unique())
             anos = [int(a) for a in anos]  # Convertir a tipos nativos de Python
@@ -77,9 +78,10 @@ def get_anos():
 def get_periodos():
     """Obtiene los periodos del archivo procesado filtrados por año."""
     ano = request.args.get('ano')
+    global is_data_loaded
     if ano:
         # Cargar el archivo solo cuando sea necesario
-        if not session.get('data_loaded', False):
+        if not is_data_loaded:
             cargar_archivo_s3('planificacion_academica_proc.xlsx')
         
         try:
@@ -97,6 +99,7 @@ def get_sedes():
     """Obtiene las sedes del archivo procesado filtrados por año y periodo."""
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
+    global is_data_loaded
     if ano and periodo:
         try:
             df_filtrado = df_evaluacion[
@@ -118,6 +121,7 @@ def get_carreras():
     ano = request.args.get('ano')
     periodo = request.args.get('periodo')
     sede = request.args.get('sede')
+    global is_data_loaded
     if ano and periodo and sede:
         try:
             df_filtrado = df_evaluacion[
@@ -141,6 +145,7 @@ def get_secciones():
     periodo = request.args.get('periodo')
     sede = request.args.get('sede')
     carrera = request.args.get('carrera')
+    global is_data_loaded
     if ano and periodo and sede and carrera:
         try:
             df_filtrado = df_evaluacion[
@@ -165,6 +170,7 @@ def get_asignaturas():
     sede = request.args.get('sede')
     carrera = request.args.get('carrera')
     seccion = request.args.get('seccion')
+    global is_data_loaded
     if all([ano, periodo, sede, carrera, seccion]):
         try:
             print(f"[DEBUG] Filtros recibidos: año={ano}, periodo={periodo}, sede={sede}, carrera={carrera}, seccion={seccion}")
