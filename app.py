@@ -281,7 +281,7 @@ import pandas as pd
 
 @app.route('/guardar_resultado_tp', methods=['POST'])
 def guardar_resultado_tp():
-    """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3."""  
+    """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3, sobrescribiendo el archivo."""
     try:
         data = request.get_json()
 
@@ -291,7 +291,7 @@ def guardar_resultado_tp():
             "Comparte dos o más ejemplos, experiencias profesionales o explicaciones que conectan de forma explícita los temas tratados en la sesión con el mundo laboral.",
             "Comunica, en al menos dos momentos distintos, los puntos clave (b) de los temas a tratar durante la sesión.",
             "Explica de forma clara y detallada los temas que van trabajarse y aplicarse durante la sesión (qué, por qué y para qué), usando diversas estrategias y recursos (diagramas, esquemas, pizarra, videos cortos u otros) para reforzar las explicaciones (c).",
-            "Explica de forma clara y detallada el procedimiento práctico para aplicar los temas aprendidos durante la sesión (el paso a paso del cómo), haciendo demostraciones para mejorar la comprensión de los/as estudiantes (d).",
+            "Explica de forma clara y detallada el procedimiento práctico para aplicar los temas aprendidos durante la sesión (el paso a paso del cómo) , haciendo demostraciones para mejorar la comprensión de los/as estudiantes (d).",
             "Realiza preguntas y repreguntas abiertas y dirigidas a estudiantes específicos, para verificar la comprensión de los temas tratados durante la mayor parte del tiempo de la sesión (e).",
             "Logra que más de 75% de los/as estudiantes participen de forma activa (f), brindando ideas, opiniones, respondiendo sus preguntas o haciendo ellos/as preguntas durante la mayor parte de la sesión.",
             "Realiza al menos una actividad de trabajo en parejas o en equipo en el que participan todos/as los/as estudiantes (g).",
@@ -339,12 +339,10 @@ def guardar_resultado_tp():
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
-        
-        # No es necesario el `seek(0)` después de escribir, se puede usar directamente getvalue
-        file_data = output.getvalue()
 
-        # Subir el archivo actualizado a S3
-        s3_client.put_object(Body=file_data, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+        # Aquí es donde sobrescribimos el archivo en S3
+        output.seek(0)  # Volver al principio del archivo en memoria
+        s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
     except Exception as e:
