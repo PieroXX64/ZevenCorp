@@ -333,22 +333,22 @@ def guardar_resultado_tp():
         df_nuevo_registro = pd.DataFrame([nuevo_registro])
         df_existente = pd.concat([df_existente, df_nuevo_registro], ignore_index=True)
 
-        # Crear un objeto BytesIO para almacenar el archivo Excel en memoria
-        output = io.BytesIO()
+# Crear un objeto BytesIO para almacenar el archivo Excel en memoria
+output = io.BytesIO()
 
-        # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
-writer = pd.ExcelWriter(output, engine='xlsxwriter')
-df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
-writer.save()  # Guardar los cambios en el archivo Excel
+try:
+    # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
+    writer.save()  # Guardar los cambios en el archivo Excel
 
-        # Subir el archivo actualizado a S3
-       output.seek(0)  # Volver al principio del archivo en memoria
-s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
-
-        return jsonify({"status": "ok"})
-    except Exception as e:
-        print(f"[ERROR] Error al guardar la evaluación: {e}")
-        return jsonify({"status": "error", "mensaje": str(e)})
+    # Subir el archivo actualizado a S3
+    output.seek(0)  # Volver al principio del archivo en memoria
+    s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+except Exception as e:
+    print(f"[ERROR] Error al guardar el archivo Excel: {e}")
+    return jsonify({"status": "error", "mensaje": str(e)})
+    
 @app.route('/formulario_p')
 def formulario_p():
     nrc = request.args.get('nrc')
