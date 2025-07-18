@@ -340,16 +340,16 @@ def guardar_resultado_tp():
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
 
-        # Volver a posicionar el puntero al inicio después de escribir el archivo
-        output.seek(0)
-
+        # Aquí, no es necesario el seek() porque `ExcelWriter` ya se encarga de cerrar el archivo correctamente
         # Subir el archivo actualizado a S3
+        output.seek(0)  # Volver al principio del archivo en memoria
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
+
 
     
 @app.route('/formulario_p')
