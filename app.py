@@ -337,12 +337,13 @@ def guardar_resultado_tp():
         output = io.BytesIO()
 
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
+writer = pd.ExcelWriter(output, engine='xlsxwriter')
+df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
+writer.save()  # Guardar los cambios en el archivo Excel
 
         # Subir el archivo actualizado a S3
-        output.seek(0)  # Volver al principio del archivo en memoria
-        s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+       output.seek(0)  # Volver al principio del archivo en memoria
+s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
     except Exception as e:
