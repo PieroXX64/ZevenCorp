@@ -340,8 +340,11 @@ def guardar_resultado_tp():
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
         
-        # Al no usar seek, subimos el archivo directamente
-        s3_client.put_object(Body=output.getvalue(), Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+        # No es necesario el `seek(0)` después de escribir, se puede usar directamente getvalue
+        file_data = output.getvalue()
+
+        # Subir el archivo actualizado a S3
+        s3_client.put_object(Body=file_data, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
     except Exception as e:
