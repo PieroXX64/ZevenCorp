@@ -181,38 +181,64 @@ document.querySelectorAll(".valoracion-carpetas").forEach(select => {
 </script>
 
 <script>
-    document.getElementById("btn-enviar").addEventListener("click", async () => {
-        const filtros = {
-            ANO: sessionStorage.getItem("ano"),
-            PERIODO: sessionStorage.getItem("periodo"),
-            SEDE_CURSO: sessionStorage.getItem("sede_curso"),
-            Carrera: sessionStorage.getItem("carrera"),
-            Seccion: sessionStorage.getItem("seccion"),
-            Asignatura: sessionStorage.getItem("asignatura"),
-            INSTRUCTOR: sessionStorage.getItem("instructor"),
-            NRC: sessionStorage.getItem("nrc"),
-            Eval_Aula: calcularPorcentajeAula(),     // Implementa esta función según tu formulario
-            Eval_Carpeta: calcularPorcentajeCarpeta() // o null si no aplica
-        };
-
-        const response = await fetch("/guardar_resultado", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(filtros)
+document.getElementById("btn-enviar").addEventListener("click", async () => {
+    // Recoger las respuestas del formulario
+    const respuestasAula = [];
+    const valoracionesAula = document.querySelectorAll(".valoracion");
+    const puntajesAula = document.querySelectorAll(".puntaje");
+    const observacionesAula = document.querySelectorAll("input[type='text']");
+    
+    valoracionesAula.forEach((select, index) => {
+        respuestasAula.push({
+            valoracion: select.value,
+            puntaje: puntajesAula[index].value,
+            observaciones: observacionesAula[index].value
         });
-
-        
-        const result = await response.json();
-        if (result.status === "ok") {
-            alert("Evaluación guardada exitosamente.");
-            window.location.href = "/";  // Redirige al inicio
-        } else {
-            alert("Error al guardar la evaluación: " + result.mensaje);
-        }
-
     });
+
+    // Recoger las respuestas de la segunda sección (Evaluación de la carpeta pedagógica)
+    const respuestasCarpeta = [];
+    const valoracionesCarpeta = document.querySelectorAll(".valoracion-carpetas");
+    const observacionesCarpeta = document.querySelectorAll(".campo input[type='text']");
+
+    valoracionesCarpeta.forEach((select, index) => {
+        respuestasCarpeta.push({
+            valoracion: select.value,
+            observaciones: observacionesCarpeta[index].value
+        });
+    });
+
+    const filtros = {
+        ANO: sessionStorage.getItem("ano"),
+        PERIODO: sessionStorage.getItem("periodo"),
+        SEDE_CURSO: sessionStorage.getItem("sede_curso"),
+        Carrera: sessionStorage.getItem("carrera"),
+        Seccion: sessionStorage.getItem("seccion"),
+        Asignatura: sessionStorage.getItem("asignatura"),
+        INSTRUCTOR: sessionStorage.getItem("instructor"),
+        NRC: sessionStorage.getItem("nrc"),
+        Eval_Aula: calcularPorcentajeAula(),
+        Eval_Carpeta: calcularPorcentajeCarpeta(),
+        respuestasAula,  // Añadir las respuestas de la primera sección
+        respuestasCarpeta  // Añadir las respuestas de la segunda sección
+    };
+
+    const response = await fetch("/guardar_resultado_tp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(filtros)
+    });
+
+    const result = await response.json();
+    if (result.status === "ok") {
+        alert("Evaluación guardada exitosamente.");
+        window.location.href = "/";  // Redirige al inicio
+    } else {
+        alert("Error al guardar la evaluación: " + result.mensaje);
+    }
+});
 </script>
 
 </body>
