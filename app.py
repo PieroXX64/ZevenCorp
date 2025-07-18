@@ -283,7 +283,6 @@ import pandas as pd
 def guardar_resultado_tp():
     """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3."""  
     try:
-        # Recibir los datos del formulario desde el frontend
         data = request.get_json()
 
         # Enunciados de las preguntas (de acuerdo con el formulario)
@@ -340,10 +339,10 @@ def guardar_resultado_tp():
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
-
-        # No es necesario usar `seek()` aquí, ya que el `ExcelWriter` gestiona el archivo correctamente
-        # Subir el archivo actualizado a S3 (sobrescribir el archivo existente)
-        output.seek(0)  # Volver al principio del archivo en memoria
+        
+        # Ya no es necesario seek(0) después de usar ExcelWriter porque está bien gestionado
+        # Subir el archivo actualizado a S3
+        output.seek(0)  # Asegúrate de volver al principio del archivo en memoria
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
