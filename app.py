@@ -339,7 +339,9 @@ def guardar_resultado_tp():
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
-            output.seek(0)  # Mover el puntero al principio del archivo después de escribir
+
+        # Volver a posicionar el puntero al inicio después de escribir el archivo
+        output.seek(0)
 
         # Subir el archivo actualizado a S3
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
