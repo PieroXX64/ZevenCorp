@@ -277,31 +277,72 @@ def get_tipo_curso_por_nrc():
     return jsonify({'tipo_curso': None})
     
 import io
-@app.route('/guardar_resultado', methods=['POST'])
-def guardar_resultado():
-    """Guardar el resultado de la evaluación docente en S3."""  
+import pandas as pd
+
+@app.route('/guardar_resultado_tp', methods=['POST'])
+def guardar_resultado_tp():
+    """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3."""  
     try:
         data = request.get_json()
+
+        # Enunciados de las preguntas (de acuerdo con el formulario)
+        enunciados = [
+            "Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.",
+            "Comparte dos o más ejemplos, experiencias profesionales o explicaciones que conectan de forma explícita los temas tratados en la sesión con el mundo laboral.",
+            "Comunica, en al menos dos momentos distintos, los puntos clave (b) de los temas a tratar durante la sesión.",
+            "Explica de forma clara y detallada los temas que van trabajarse y aplicarse durante la sesión (qué, por qué y para qué), usando diversas estrategias y recursos (diagramas, esquemas, pizarra, videos cortos u otros) para reforzar las explicaciones (c).",
+            "Explica de forma clara y detallada el procedimiento práctico para aplicar los temas aprendidos durante la sesión (el paso a paso del cómo), haciendo demostraciones para mejorar la comprensión de los/as estudiantes (d).",
+            "Realiza preguntas y repreguntas abiertas y dirigidas a estudiantes específicos, para verificar la comprensión de los temas tratados durante la mayor parte del tiempo de la sesión (e).",
+            "Logra que más de 75% de los/as estudiantes participen de forma activa (f), brindando ideas, opiniones, respondiendo sus preguntas o haciendo ellos/as preguntas durante la mayor parte de la sesión.",
+            "Realiza al menos una actividad de trabajo en parejas o en equipo en el que participan todos/as los/as estudiantes (g).",
+            "Emplea recursos didácticos, en al menos dos oportunidades distintas, considerando mínimamente uno TIC (h), para el desarrollo de los aprendizajes de la sesión.",
+            "Monitorea de forma activa el trabajo de los/as estudiantes, haciendo recorridos al aula, preguntando y repreguntado sobre los temas tratados.",
+            "Retroalimenta la participación de los/as estudiantes, a partir de preguntas de reflexión y brindando pistas para lograr que lleguen a la respuesta por sus propios medios.",
+            "Refuerza positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades.",
+            "¿La versión del sílabo es la correcta?",
+            "¿Los datos del sílabo están actualizados?",
+            "¿El plan de clase está alineado con la sesión observada?",
+            "¿La asignación de fechas está actualizada?",
+            "¿Los planes de clase están cargados (ocultos al estudiante)?",
+            "¿Las PPT y recursos están alineados con lo ejecutado?",
+            "¿Se cuenta con el registro de asistencia actualizado?",
+            "¿Se cuenta con el registro de evaluaciones actualizado?"
+        ]
+        
+        # Reemplazar espacios y caracteres especiales para convertirlos en nombres válidos de columnas
+        columnas = [enunciado.replace(" ", "_").replace("¿", "").replace("?", "").replace(",", "").replace(".", "") for enunciado in enunciados]
+
+        # Añadir las columnas estáticas existentes
         columnas = [
-            "ANO", "PERIODO", "SEDE_CURSO", "Carrera",
+            "ANO", "PERIODO", "SEDE_CURSO", "Carrera", 
             "Seccion", "Asignatura", "INSTRUCTOR", "NRC",
             "Eval_Aula", "Eval_Carpeta"
-        ]
+        ] + columnas  # Agregar las columnas de las preguntas
+
+        # Crear el diccionario con los datos del formulario
         nuevo_registro = {col: data.get(col, "") for col in columnas}
 
-        # Crear el DataFrame con el nuevo registro
-        df_nuevo_registro = pd.DataFrame([nuevo_registro])
+        # Verificar si el archivo ya existe en S3 (cargar si es necesario)
+        try:
+            s3_object = s3_client.get_object(Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+            df_existente = pd.read_excel(s3_object['Body'])  # Leer el archivo existente
+        except s3_client.exceptions.NoSuchKey:
+            df_existente = pd.DataFrame(columns=columnas)  # Si el archivo no existe, creamos uno nuevo con las columnas
 
-        # Crear un objeto BytesIO para almacenar el archivo en memoria
+        # Añadir el nuevo registro al DataFrame existente
+        df_nuevo_registro = pd.DataFrame([nuevo_registro])
+        df_existente = pd.concat([df_existente, df_nuevo_registro], ignore_index=True)
+
+        # Crear un objeto BytesIO para almacenar el archivo Excel en memoria
         output = io.BytesIO()
 
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_nuevo_registro.to_excel(writer, index=False, sheet_name='EvaluacionDocente')
+            df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
 
-        # Guardar el archivo procesado como evaluacion_docente_proc.xlsx en S3
+        # Subir el archivo actualizado a S3
         output.seek(0)  # Volver al principio del archivo en memoria
-        s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_proc.xlsx')
+        s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
     except Exception as e:
