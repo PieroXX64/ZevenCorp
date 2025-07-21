@@ -291,7 +291,8 @@ def guardar_resultado_tp():
     """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3."""  
     try:
         data = request.get_json()
- print(f"[INFO] Datos recibidos: {data}")  # Verificar que los datos son correctos
+        print(f"[INFO] Datos recibidos: {data}")  # Verificar que los datos son correctos
+
         # Enunciados de las preguntas (de acuerdo con el formulario)
         enunciados = [
             "Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.",
