@@ -321,7 +321,7 @@ def guardar_resultado_tp():
         response_data = response.json()
         print(f"[INFO] Respuesta de SheetDB: {response_data}")
 
-        if response.status_code == 200 and response_data.get('created') == 1:
+        if response.status_code == 200 or response_data.get('created') == 1:
             # Si "created" está presente y es igual a 1, significa que el registro fue creado
             return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
         else:
