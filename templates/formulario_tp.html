@@ -232,14 +232,14 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     });
 
     const result = await response.json();
-    console.log(result);  // Revisamos el contenido de la respuesta
+    console.log(result);  // Verificamos el resultado de la respuesta para depuración
 
-    // Verifica si la respuesta es exitosa
-    if (result.created === 1) {
+    // Verifica si el campo "created" está presente en la respuesta y si es 1
+    if (result && result.created === 1) {
         alert("Evaluación guardada exitosamente.");
         window.location.href = "/";  // Redirige al inicio
     } else {
-        // Mostrar el mensaje correcto de error
+        // Mostrar un mensaje de error si no se pudo guardar la evaluación
         const errorMessage = result.mensaje || "Error desconocido";
         alert("Error al guardar la evaluación: " + errorMessage);
     }
