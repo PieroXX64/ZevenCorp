@@ -321,16 +321,13 @@ def guardar_resultado_tp():
         response_data = response.json()
         print(f"[INFO] Respuesta de SheetDB: {response_data}")
 
-        if response.status_code == 200:
+        if response.status_code == 200 and response_data.get('created') == 1:
             # Si "created" está presente y es igual a 1, significa que el registro fue creado
-            if response_data.get('created') == 1:
-                return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
-            else:
-                # Si "created" no es 1, algo salió mal
-                return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response_data}"})
+            return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
         else:
-            # Si el código de estado HTTP no es 200, mostramos el mensaje de error
-            return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
+            # Si no "created" o tiene un valor diferente a 1, devolvemos mensaje de error
+            print(f"[ERROR] Error al guardar la evaluación: {response_data}")
+            return jsonify({"status": "error", "mensaje": "Error al guardar la evaluación: " + str(response_data)})
 
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
