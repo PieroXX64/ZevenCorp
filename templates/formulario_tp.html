@@ -235,12 +235,12 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     console.log(result);  // Revisamos el contenido de la respuesta
 
     // Verifica si la respuesta es exitosa
-    if (response.ok && result.created === 1) {
+    if (result.created === 1) {
         alert("Evaluación guardada exitosamente.");
         window.location.href = "/";  // Redirige al inicio
     } else {
-        // Si no hay `message`, mostramos todo el objeto de la respuesta
-        const errorMessage = result.message || JSON.stringify(result);
+        // Mostrar el mensaje correcto de error
+        const errorMessage = result.mensaje || "Error desconocido";
         alert("Error al guardar la evaluación: " + errorMessage);
     }
 });
