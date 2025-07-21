@@ -356,7 +356,6 @@ def guardar_resultado_tp():
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
 
         # Subir el archivo actualizado a S3
-        output.seek(0)  # Asegúrate de volver al principio del archivo en memoria 
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
