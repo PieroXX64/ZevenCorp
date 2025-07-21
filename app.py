@@ -317,18 +317,19 @@ def guardar_resultado_tp():
 
         # Obtener la respuesta JSON de la API
         response_json = response.json()
-        
-        # Si la respuesta contiene 'created' y el valor es mayor que 0, interpretamos esto como un éxito
-        if response.status_code == 200 and response_json.get("created", 0) > 0:
+
+        # Verificamos si la respuesta contiene 'created' con valor 1
+        if response.status_code == 200 and response_json.get("created", 0) == 1:
             return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
         else:
-            # Si 'created' no está presente o el valor no es mayor que 0, consideramos que hubo un error al guardar
+            # Si la respuesta no tiene "created" o no es igual a 1, lo consideramos como error
             return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response_json}"})
     
     except Exception as e:
         # Captura cualquier error y lo imprime
         print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
+
 
     
 @app.route('/formulario_p')
