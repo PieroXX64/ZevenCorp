@@ -321,7 +321,6 @@ else:
     return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
 
 
-
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
