@@ -28,12 +28,19 @@ def cargar_archivo_s3(nombre_archivo):
 
         # Leerlo con pandas
         df_evaluacion = pd.read_excel(BytesIO(file_data))
+
+        # Verificar si el archivo está vacío
+        if df_evaluacion.empty:
+            print(f"[ERROR] El archivo descargado está vacío.")
+            return jsonify({"status": "error", "mensaje": "El archivo descargado desde S3 está vacío"})
+
         print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
         print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
         is_data_loaded = True  # Marcamos que los datos se han cargado
     except Exception as e:
         print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
         is_data_loaded = False
+        return jsonify({"status": "error", "mensaje": f"Error al cargar el archivo desde S3: {str(e)}"})
 
 
 @app.route('/')
@@ -340,9 +347,6 @@ def guardar_resultado_tp():
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
         
-        # Ya no es necesario seek(0) después de usar ExcelWriter porque está bien gestionado
-        # Subir el archivo actualizado a S3
-        output.seek(0)  # Asegúrate de volver al principio del archivo en memoria
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
