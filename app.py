@@ -312,12 +312,14 @@ def guardar_resultado_tp():
             # Añadir más campos de respuestas según tu formulario
         }
 
-        # Intentamos hacer la solicitud POST a SheetDB para guardar los datos
+        # Realizar una solicitud POST a SheetDB para guardar los datos
         response = requests.post(SHEETDB_API_URL, json=nuevo_registro)
 
-        if response.status_code == 200 and "created" in response.json():
+        # Verifica si la respuesta es exitosa (código 200 y contiene la clave 'created')
+        if response.status_code == 200 and "created" in response.json() and response.json()["created"] > 0:
             return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
         else:
+            # Si no es exitosa, mostrar el error con el texto de la respuesta
             return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
     
     except Exception as e:
