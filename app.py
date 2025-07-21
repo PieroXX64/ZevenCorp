@@ -290,7 +290,7 @@ def get_tipo_curso_por_nrc():
 import io
 import pandas as pd
 
-import requests  # Asegúrate de tener esta librería
+import requests  # Necesitamos esta librería para interactuar con SheetDB
 
 @app.route('/guardar_resultado_tp', methods=['POST'])
 def guardar_resultado_tp():
@@ -317,20 +317,20 @@ def guardar_resultado_tp():
         # Realizar una solicitud POST a SheetDB para guardar los datos
         response = requests.post(SHEETDB_API_URL, json=nuevo_registro)
 
-        # Verificamos si el código de estado HTTP es 200 y si la respuesta tiene el campo 'created' igual a 1
+        # Verificamos si la respuesta tiene el campo "created"
+        response_data = response.json()
+        print(f"[INFO] Respuesta de SheetDB: {response_data}")
+
         if response.status_code == 200:
-            response_data = response.json()
-            print(f"[INFO] Respuesta de SheetDB: {response_data}")
-            
-            # Si 'created' es 1, significa que el registro fue creado exitosamente
+            # Si "created" está presente y es igual a 1, significa que el registro fue creado
             if response_data.get('created') == 1:
                 return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
             else:
-                # Si la respuesta no contiene 'created' o no tiene valor 1, se trata como un error
+                # Si "created" no es 1, algo salió mal
                 return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response_data}"})
-
-        # Si el código de estado no es 200, mostramos el mensaje de error
-        return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
+        else:
+            # Si el código de estado HTTP no es 200, mostramos el mensaje de error
+            return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
 
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
