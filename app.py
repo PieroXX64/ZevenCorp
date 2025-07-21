@@ -358,6 +358,8 @@ def guardar_resultado_tp():
         # Subir el archivo actualizado a S3
         output.seek(0)  # Asegúrate de volver al principio del archivo en memoria 
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
+        # Mensaje de depuración después de subir el archivo a S3
+        print(f"[INFO] Archivo guardado exitosamente en S3 con el nombre 'evaluacion_docente_tp.xlsx'")
 
         return jsonify({"status": "ok"})
     except Exception as e:
