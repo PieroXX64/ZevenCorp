@@ -341,8 +341,8 @@ def guardar_resultado_tp():
 
         # Verificar si el archivo está vacío
         if df_existente.empty:
-            print("[ERROR] El archivo de S3 está vacío o no contiene datos válidos.")
-            return jsonify({"status": "error", "mensaje": "El archivo está vacío."})
+            print("[INFO] El archivo está vacío, se crea un archivo nuevo.")
+            df_existente = pd.DataFrame(columns=columnas)
 
         # Añadir el nuevo registro al DataFrame existente
         df_nuevo_registro = pd.DataFrame([nuevo_registro])
@@ -358,8 +358,6 @@ def guardar_resultado_tp():
         # Subir el archivo actualizado a S3
         output.seek(0)  # Asegúrate de volver al principio del archivo en memoria 
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
-        # Mensaje de depuración después de subir el archivo a S3
-        print(f"[INFO] Archivo guardado exitosamente en S3 con el nombre 'evaluacion_docente_tp.xlsx'")
 
         return jsonify({"status": "ok"})
     except Exception as e:
