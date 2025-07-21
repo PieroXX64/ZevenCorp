@@ -233,15 +233,15 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
 
     const result = await response.json();
 
-    console.log(result);  // Agregar log para revisar el formato completo de la respuesta
+    // Log para verificar la respuesta recibida
+    console.log(result);  // Verifica el formato completo de la respuesta
 
+    // Verifica si la respuesta es exitosa
     if (response.ok && result.created === 1) {
-        // Si la respuesta es exitosa, redirigir al inicio
         alert("Evaluación guardada exitosamente.");
         window.location.href = "/";  // Redirige al inicio
     } else {
-        // Si hay algún error, muestra el mensaje de error
-        alert("Error al guardar la evaluación: " + (result.mensaje || "Error desconocido"));
+        alert("Error al guardar la evaluación: " + (result.message || "Error desconocido"));
     }
 });
 </script>
