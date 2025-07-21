@@ -291,7 +291,7 @@ def guardar_resultado_tp():
     """Guardar el resultado del formulario TP en un archivo Excel acumulativo en S3."""  
     try:
         data = request.get_json()
-
+ print(f"[INFO] Datos recibidos: {data}")  # Verificar que los datos son correctos
         # Enunciados de las preguntas (de acuerdo con el formulario)
         enunciados = [
             "Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.",
@@ -333,9 +333,15 @@ def guardar_resultado_tp():
         try:
             s3_object = s3_client.get_object(Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
             df_existente = pd.read_excel(s3_object['Body'])  # Leer el archivo existente
+            print(f"[INFO] Archivo cargado desde S3 exitosamente.")
         except s3_client.exceptions.NoSuchKey:
+            print("[INFO] El archivo no existe. Creando uno nuevo.")
             df_existente = pd.DataFrame(columns=columnas)  # Si el archivo no existe, creamos uno nuevo con las columnas
 
+     # Verificar si el archivo está vacío
+        if df_existente.empty:
+            print("[ERROR] El archivo de S3 está vacío o no contiene datos válidos.")
+            return jsonify({"status": "error", "mensaje": "El archivo está vacío."})
         # Añadir el nuevo registro al DataFrame existente
         df_nuevo_registro = pd.DataFrame([nuevo_registro])
         df_existente = pd.concat([df_existente, df_nuevo_registro], ignore_index=True)
@@ -346,7 +352,8 @@ def guardar_resultado_tp():
         # Usar ExcelWriter para escribir el DataFrame en el archivo Excel en memoria
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_existente.to_excel(writer, index=False, sheet_name='EvaluacionDocenteTP')
-        
+        # Subir el archivo actualizado a S3
+        output.seek(0)  # Asegúrate de volver al principio del archivo en memoria 
         s3_client.put_object(Body=output, Bucket=BUCKET_NAME, Key='evaluacion_docente_tp.xlsx')
 
         return jsonify({"status": "ok"})
