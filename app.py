@@ -290,6 +290,8 @@ def get_tipo_curso_por_nrc():
 import io
 import pandas as pd
 
+import requests  # Asegúrate de tener esta librería
+
 @app.route('/guardar_resultado_tp', methods=['POST'])
 def guardar_resultado_tp():
     """Guardar el resultado del formulario TP en Google Sheets usando SheetDB."""  
@@ -315,16 +317,23 @@ def guardar_resultado_tp():
         # Realizar una solicitud POST a SheetDB para guardar los datos
         response = requests.post(SHEETDB_API_URL, json=nuevo_registro)
 
-        # Revisamos la respuesta para ver si contiene "created" (éxito)
-        if response.status_code == 200 and "created" in response.json():
-            return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
+        if response.status_code == 200:
+            # Aquí verificamos que 'created' sea 1, lo que indica que el registro fue creado exitosamente
+            response_data = response.json()
+            print(f"[INFO] Respuesta de SheetDB: {response_data}")
+            
+            if response_data.get('created') == 1:  # Verificamos si se ha creado correctamente
+                return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
+            else:
+                # Si no se ha creado correctamente, respondemos con un error
+                return jsonify({"status": "error", "mensaje": "Error al guardar la evaluación: " + str(response_data)})
+
         else:
             return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
 
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
-
     
 @app.route('/formulario_p')
 def formulario_p():
