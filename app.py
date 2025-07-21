@@ -316,10 +316,10 @@ def guardar_resultado_tp():
         response = requests.post(SHEETDB_API_URL, json=nuevo_registro)
 
         if response.status_code == 200 and "created" in response.json():
-    # Esto indica que la respuesta contiene "created": 1
     return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
-        else:
+else:
     return jsonify({"status": "error", "mensaje": f"Error al guardar la evaluación: {response.text}"})
+
 
 
     except Exception as e:
