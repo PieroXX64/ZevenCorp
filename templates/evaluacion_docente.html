@@ -61,10 +61,31 @@
         });
     }
 
-    document.getElementById('ano').addEventListener('change', () => {
-        const ano = document.getElementById('ano').value;
-        console.log("Año seleccionado:", ano); // Depuración: Verificar el valor del año
-        cargarSelect('get_periodos', 'periodo', { ano });
+    document.getElementById('ano').addEventListener('change', async () => {
+    const ano = document.getElementById('ano').value;
+    console.log("Año seleccionado:", ano);  // Verifica que el año se selecciona correctamente
+
+    const response = await fetch(`/get_periodos?ano=${ano}`);
+    const data = await response.json();
+
+    console.log("Datos recibidos para los periodos:", data);  // Verifica si el backend está respondiendo correctamente
+
+    const periodoSelect = document.getElementById('periodo');
+    periodoSelect.innerHTML = '<option value="">Seleccione</option>';
+
+    if (data && data.length > 0) {
+        data.forEach(periodo => {
+            const option = document.createElement('option');
+            option.value = periodo;
+            option.textContent = periodo;
+            periodoSelect.appendChild(option);
+        });
+    } else {
+        // Si no hay datos, muestra un mensaje
+        const option = document.createElement('option');
+        option.textContent = "No hay periodos disponibles";
+        periodoSelect.appendChild(option);
+    }
     });
 
     document.getElementById('periodo').addEventListener('change', () => {
