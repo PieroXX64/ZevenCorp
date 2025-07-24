@@ -56,6 +56,7 @@ def load_data():
     if not is_data_loaded:  # Verifica si los datos ya han sido cargados
         cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         if is_data_loaded:
+            print(f"[INFO] Datos de filtros cargados correctamente.")  # Debug
             return jsonify({"status": "success", "message": "Datos de filtros cargados correctamente"})
         else:
             return jsonify({"status": "error", "message": "Error al cargar los datos desde SheetDB"})
@@ -89,9 +90,12 @@ def get_periodos():
             cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         
         try:
+            # Debugging: Mostrar los datos del filtro
+            print(f"[DEBUG] Filtrando datos para el año {ano}")
             periodos = sorted(df_evaluacion[df_evaluacion['ANO'] == int(ano)]['PERIODO'].dropna().unique())
+            print(f"[DEBUG] Periodos encontrados: {periodos}")  # Verificar si los periodos están presentes
+
             periodos = [int(p) for p in periodos]  # Asegurar tipos nativos
-            print(f"[INFO] Periodos disponibles para el año {ano}: {periodos}")
             return jsonify(periodos)
         except Exception as e:
             print(f"[ERROR] al obtener periodos: {e}")
