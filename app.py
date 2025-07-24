@@ -27,11 +27,11 @@ def cargar_datos_desde_sheetdb():
         response = requests.get(SHEETDB_API_URL_FILTERS)
         
         if response.status_code == 200:
-             # Depuración: Verifica los datos que están siendo cargados
+            # Depuración: Verifica los datos que están siendo cargados
             print(f"[DEBUG] Datos cargados desde SheetDB: {response.json()}")  # Esta es la línea de depuración
 
             # Convertir la respuesta en formato JSON a un DataFrame de pandas
-           global df_evaluacion  # Añadido para modificar la variable global
+            global df_evaluacion  # Añadido para modificar la variable global
             df_evaluacion = pd.DataFrame(response.json())
             is_data_loaded = True  # Marcamos que los datos se han cargado
             print(f"[INFO] Datos de filtros cargados correctamente desde SheetDB.")
