@@ -20,16 +20,11 @@ is_data_loaded = False  # Variable global para controlar si los datos están car
 def cargar_datos_desde_sheetdb():
     """Leer datos desde Google Sheets usando SheetDB para los filtros."""
     global df_evaluacion, is_data_loaded
-    try:
-        print("[INFO] Intentando obtener datos desde SheetDB para filtros.")
-        
+    try:        
         # Hacemos una solicitud GET a la API de SheetDB para obtener los filtros
         response = requests.get(SHEETDB_API_URL_FILTERS)
         
         if response.status_code == 200:
-            # Depuración: Verifica los datos que están siendo cargados
-            print(f"[DEBUG] Datos cargados desde SheetDB: {response.json()}")  # Esta es la línea de depuración
-
             # Convertir la respuesta en formato JSON a un DataFrame de pandas
             global df_evaluacion  # Añadido para modificar la variable global
             df_evaluacion = pd.DataFrame(response.json())
