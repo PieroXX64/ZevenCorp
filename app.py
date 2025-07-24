@@ -85,23 +85,37 @@ def get_periodos():
     ano = request.args.get('ano')
     global is_data_loaded
     if ano:
-        # Cargar los datos si no están cargados
+        # Cargar los datos solo cuando no están cargados
         if not is_data_loaded:
             cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
-        
+
+        # Depurar: Verifica si el DataFrame contiene datos después de cargar
+        if df_evaluacion.empty:
+            return jsonify({"status": "error", "message": "No se han cargado datos."})
+
         try:
-            # Filtrar los datos de acuerdo con el año
-            periodos = sorted(df_evaluacion[df_evaluacion['ANO'] == int(ano)]['PERIODO'].dropna().unique())
+            # Filtrando por 'ANO' y obteniendo los 'PERIODO'
+            print(f"[DEBUG] Filtrando por el año: {ano}")
+            df_filtrado = df_evaluacion[df_evaluacion['ANO'] == int(ano)]
+            
+            if df_filtrado.empty:
+                print(f"[ERROR] No se encontraron datos para el año {ano}.")
+                return jsonify([])
+
+            periodos = sorted(df_filtrado['PERIODO'].dropna().unique())  # Obtiene los valores únicos de 'PERIODO'
             
             if not periodos:
-                print(f"[ERROR] No se encontraron periodos para el año {ano}")
+                print(f"[ERROR] No se encontraron periodos para el año {ano}.")
                 
-            print(f"[DEBUG] Periodos encontrados: {periodos}")
-            periodos = [int(p) for p in periodos]  # Asegurar tipos nativos
+            print(f"[DEBUG] Periodos encontrados para el año {ano}: {periodos}")
+            
+            periodos = [int(p) for p in periodos]  # Convertir a enteros para garantizar que no haya tipos incorrectos
             return jsonify(periodos)
+
         except Exception as e:
             print(f"[ERROR] al obtener periodos: {e}")
             return jsonify([])
+
     return jsonify([])
 
 @app.route('/get_sedes')
