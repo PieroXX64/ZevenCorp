@@ -63,6 +63,7 @@
 
     document.getElementById('ano').addEventListener('change', () => {
         const ano = document.getElementById('ano').value;
+        console.log("Año seleccionado:", ano); // Depuración: Verificar el valor del año
         cargarSelect('get_periodos', 'periodo', { ano });
     });
 
