@@ -2,49 +2,42 @@ import os
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import requests  # Necesitamos esta librería para interactuar con SheetDB
-import boto3
-from io import BytesIO
 import datetime  # Necesario para la marca de tiempo en los logs
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Necesario para manejar sesiones
 
-# Configuración de S3
-s3_client = boto3.client('s3')
-BUCKET_NAME = 'zeven-corp'  # Asegúrate de que este es el nombre correcto de tu bucket en S3
+# URL de la API de SheetDB para los resultados (esto ya lo tienes)
+SHEETDB_API_URL = "https://sheetdb.io/api/v1/t5uvp45rl7ias"  # URL para los resultados
 
-# URL de la API de SheetDB (reemplaza con la tuya)
-SHEETDB_API_URL = "https://sheetdb.io/api/v1/t5uvp45rl7ias"  # Reemplaza con tu propia URL de API de SheetDB
+# URL de la API de SheetDB para los filtros (deberás poner esta URL específica para tu caso)
+SHEETDB_API_URL_FILTERS = "https://sheetdb.io/api/v1/4m9mlphf2sk56"  # Reemplaza con la URL de tu hoja de filtros
 
 # Variable global para almacenar el DataFrame cargado
 df_evaluacion = pd.DataFrame()
 is_data_loaded = False  # Variable global para controlar si los datos están cargados
 
-def cargar_archivo_s3(nombre_archivo):
-    """Leer archivo procesado desde S3 y cargarlo en el DataFrame global."""
+def cargar_datos_desde_sheetdb():
+    """Leer datos desde Google Sheets usando SheetDB para los filtros."""
     global df_evaluacion, is_data_loaded
     try:
-        print(f"[INFO] Intentando descargar el archivo {nombre_archivo} desde S3.")
+        print("[INFO] Intentando obtener datos desde SheetDB para filtros.")
         
-        # Descargar el archivo desde S3
-        file_obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=nombre_archivo)
-        file_data = file_obj['Body'].read()
-
-        # Leerlo con pandas
-        df_evaluacion = pd.read_excel(BytesIO(file_data))
-
-        # Verificar si el archivo está vacío
-        if df_evaluacion.empty:
-            print(f"[ERROR] El archivo descargado está vacío.")
-            return jsonify({"status": "error", "mensaje": "El archivo descargado desde S3 está vacío"})
-
-        print(f"[INFO] Archivo {nombre_archivo} cargado correctamente desde S3.")
-        print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
-        is_data_loaded = True  # Marcamos que los datos se han cargado
+        # Hacemos una solicitud GET a la API de SheetDB para obtener los filtros
+        response = requests.get(SHEETDB_API_URL_FILTERS)
+        
+        if response.status_code == 200:
+            # Convertir la respuesta en formato JSON a un DataFrame de pandas
+            df_evaluacion = pd.DataFrame(response.json())
+            is_data_loaded = True  # Marcamos que los datos se han cargado
+            print(f"[INFO] Datos de filtros cargados correctamente desde SheetDB.")
+            print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
+        else:
+            print(f"[ERROR] Error al obtener datos de SheetDB para filtros: {response.text}")
+            is_data_loaded = False
     except Exception as e:
-        print(f"[ERROR] Error al cargar el archivo desde S3: {e}")
+        print(f"[ERROR] Error al obtener datos desde SheetDB: {e}")
         is_data_loaded = False
-        return jsonify({"status": "error", "mensaje": f"Error al cargar el archivo desde S3: {str(e)}"})
 
 
 @app.route('/')
@@ -58,16 +51,16 @@ def evaluacion_docente():
 
 @app.route('/load_data', methods=['POST'])
 def load_data():
-    """Carga el archivo desde S3 al hacer clic en el botón."""
+    """Carga los datos desde Google Sheets usando SheetDB al hacer clic en el botón."""
     global is_data_loaded
     if not is_data_loaded:  # Verifica si los datos ya han sido cargados
-        cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Cargar datos desde S3
+        cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         if is_data_loaded:
-            return jsonify({"status": "success", "message": "Datos cargados correctamente"})
+            return jsonify({"status": "success", "message": "Datos de filtros cargados correctamente"})
         else:
-            return jsonify({"status": "error", "message": "Error al cargar los datos desde S3"})
+            return jsonify({"status": "error", "message": "Error al cargar los datos desde SheetDB"})
     else:
-        return jsonify({"status": "info", "message": "Los datos ya están cargados"})
+        return jsonify({"status": "info", "message": "Los datos de filtros ya están cargados"})
 
 @app.route('/get_anos')
 def get_anos():
@@ -93,7 +86,7 @@ def get_periodos():
     if ano:
         # Cargar el archivo solo cuando sea necesario
         if not is_data_loaded:
-            cargar_archivo_s3('planificacion_academica_proc.xlsx')
+            cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         
         try:
             periodos = sorted(df_evaluacion[df_evaluacion['ANO'] == int(ano)]['PERIODO'].dropna().unique())
@@ -345,19 +338,19 @@ def formulario_tp():
 
 @app.route('/cronjob_load_data', methods=['GET'])
 def cronjob_load_data():
-    """Este endpoint se ejecutará a través del cronjob para cargar automáticamente los datos desde S3."""
+    """Este endpoint se ejecutará a través del cronjob para cargar automáticamente los datos desde SheetDB."""
     global is_data_loaded
     if not is_data_loaded:  # Verifica si los datos ya han sido cargados
-        cargar_archivo_s3('planificacion_academica_proc.xlsx')  # Ahora se pasa el nombre del archivo
+        cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         if is_data_loaded:
-            print(f"[INFO] Datos cargados correctamente desde S3 a las {datetime.datetime.now()}.")
-            return jsonify({"status": "success", "message": "Datos cargados correctamente"})
+            print(f"[INFO] Datos de filtros cargados correctamente desde SheetDB a las {datetime.datetime.now()}.")
+            return jsonify({"status": "success", "message": "Datos de filtros cargados correctamente"})
         else:
-            print(f"[ERROR] Error al cargar los datos desde S3.")
-            return jsonify({"status": "error", "message": "Error al cargar los datos desde S3"})
+            print(f"[ERROR] Error al cargar los datos desde SheetDB.")
+            return jsonify({"status": "error", "message": "Error al cargar los datos desde SheetDB"})
     else:
-        print(f"[INFO] Los datos ya están cargados.")
-        return jsonify({"status": "info", "message": "Los datos ya están cargados"})
+        print(f"[INFO] Los datos de filtros ya están cargados.")
+        return jsonify({"status": "info", "message": "Los datos de filtros ya están cargados"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Usar el puerto dinámico proporcionado por Render
