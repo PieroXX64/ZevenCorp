@@ -85,16 +85,18 @@ def get_periodos():
     ano = request.args.get('ano')
     global is_data_loaded
     if ano:
-        # Cargar el archivo solo cuando sea necesario
+        # Cargar los datos si no están cargados
         if not is_data_loaded:
             cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
         
         try:
-            # Debugging: Mostrar los datos del filtro
-            print(f"[DEBUG] Filtrando datos para el año {ano}")
+            # Filtrar los datos de acuerdo con el año
             periodos = sorted(df_evaluacion[df_evaluacion['ANO'] == int(ano)]['PERIODO'].dropna().unique())
-            print(f"[DEBUG] Periodos encontrados: {periodos}")  # Verificar si los periodos están presentes
-
+            
+            if not periodos:
+                print(f"[ERROR] No se encontraron periodos para el año {ano}")
+                
+            print(f"[DEBUG] Periodos encontrados: {periodos}")
             periodos = [int(p) for p in periodos]  # Asegurar tipos nativos
             return jsonify(periodos)
         except Exception as e:
