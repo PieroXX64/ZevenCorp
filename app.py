@@ -386,7 +386,11 @@ def guardar_resultado_tp():
             nuevo_registro[f"C{idx}_Recomendaciones"] = (item.get("recomendaciones") or "").strip()
 
         # --- Envío a SheetDB ---
-        response = requests.post(SHEETDB_API_URL, json=nuevo_registro, timeout=30)
+        response = requests.post(
+    f"{SHEETDB_API_URL_RESULTADOS}?sheet=TP",
+    json=nuevo_registro,
+    timeout=30
+)
         response_data = {}
         try:
             response_data = response.json()
