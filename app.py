@@ -20,23 +20,47 @@ is_data_loaded = False  # Variable global para controlar si los datos están car
 def cargar_datos_desde_sheetdb():
     """Leer datos desde Google Sheets usando SheetDB para los filtros."""
     global df_evaluacion, is_data_loaded
-    try:        
-        # Hacemos una solicitud GET a la API de SheetDB para obtener los filtros
-        response = requests.get(SHEETDB_API_URL_FILTERS)
-        
+    try:
+        # Solicitud a la API de SheetDB
+        response = requests.get(SHEETDB_API_URL_FILTERS, timeout=30)
+
         if response.status_code == 200:
-            # Convertir la respuesta en formato JSON a un DataFrame de pandas
-            global df_evaluacion  # Añadido para modificar la variable global
+            # Cargar JSON a DataFrame
             df_evaluacion = pd.DataFrame(response.json())
-            is_data_loaded = True  # Marcamos que los datos se han cargado
-            print(f"[INFO] Datos de filtros cargados correctamente desde SheetDB.")
-            print(f"[INFO] Primeros 5 registros del DataFrame:\n{df_evaluacion.head()}")
+
+            # --- Normalización de columnas y datos ---
+            # Quitar espacios en los nombres de columnas
+            df_evaluacion.columns = [str(c).strip() for c in df_evaluacion.columns]
+
+            # Reemplazar strings vacíos por NA
+            df_evaluacion = df_evaluacion.replace(r'^\s*$', pd.NA, regex=True)
+
+            # Normalizar columnas de texto (si existen)
+            texto_cols = ['SEDE_PRINCIPAL', 'SEDE_CURSO', 'Carrera', 'Asignatura', 'INSTRUCTOR', 'Tipo_Curso']
+            for col in texto_cols:
+                if col in df_evaluacion.columns:
+                    df_evaluacion[col] = df_evaluacion[col].astype(str).str.strip()
+
+            # Normalizar columnas numéricas (SheetDB suele entregar strings)
+            num_cols = ['ANO', 'PERIODO', 'Seccion', 'NRC']
+            for col in num_cols:
+                if col in df_evaluacion.columns:
+                    df_evaluacion[col] = pd.to_numeric(df_evaluacion[col], errors='coerce')
+
+            # Log útil
+            print("[INFO] dtypes tras normalización:\n", df_evaluacion.dtypes)
+            print("[INFO] Primeros 5 registros del DataFrame:\n", df_evaluacion.head())
+
+            is_data_loaded = True
+            print("[INFO] Datos de filtros cargados correctamente desde SheetDB.")
         else:
             print(f"[ERROR] Error al obtener datos de SheetDB para filtros: {response.text}")
             is_data_loaded = False
+
     except Exception as e:
         print(f"[ERROR] Error al obtener datos desde SheetDB: {e}")
         is_data_loaded = False
+
 
 
 @app.route('/')
@@ -81,41 +105,55 @@ def get_anos():
 @app.route('/get_periodos')
 def get_periodos():
     """Obtiene los periodos del archivo procesado filtrados por año."""
-    ano = request.args.get('ano')
-    global is_data_loaded
-    if ano:
-        # Cargar los datos solo cuando no están cargados
-        if not is_data_loaded:
-            cargar_datos_desde_sheetdb()  # Cargar datos desde SheetDB
+    global is_data_loaded, df_evaluacion
 
-        # Depurar: Verifica si el DataFrame contiene datos después de cargar
-        if df_evaluacion.empty:
-            return jsonify({"status": "error", "message": "No se han cargado datos."})
+    # Toma el año ya casteado a int; si no viene, devolvemos lista vacía
+    ano = request.args.get('ano', type=int)
+    if ano is None:
+        print("[WARN] /get_periodos llamado sin parámetro 'ano'")
+        return jsonify([])
 
-        try:
-            # Filtrando por 'ANO' y obteniendo los 'PERIODO'
-            print(f"[DEBUG] Filtrando por el año: {ano}")
-            df_filtrado = df_evaluacion[df_evaluacion['ANO'] == int(ano)]
-            
-            if df_filtrado.empty:
-                print(f"[ERROR] No se encontraron datos para el año {ano}.")
-                return jsonify([])
+    # Si aún no hay datos en memoria, intenta cargarlos
+    if not is_data_loaded:
+        cargar_datos_desde_sheetdb()
 
-            periodos = sorted(df_filtrado['PERIODO'].dropna().unique())  # Obtiene los valores únicos de 'PERIODO'
-            
-            if not periodos:
-                print(f"[ERROR] No se encontraron periodos para el año {ano}.")
-                
-            print(f"[DEBUG] Periodos encontrados para el año {ano}: {periodos}")
-            
-            periodos = [int(p) for p in periodos]  # Convertir a enteros para garantizar que no haya tipos incorrectos
-            return jsonify(periodos)
+    # Validaciones básicas
+    if df_evaluacion is None or df_evaluacion.empty:
+        print("[ERROR] /get_periodos: df_evaluacion vacío o no cargado")
+        return jsonify([])
 
-        except Exception as e:
-            print(f"[ERROR] al obtener periodos: {e}")
+    if 'ANO' not in df_evaluacion.columns or 'PERIODO' not in df_evaluacion.columns:
+        print("[ERROR] /get_periodos: columnas requeridas no presentes en df_evaluacion")
+        return jsonify([])
+
+    try:
+        # Cast defensivo: asegura que las columnas relevantes son numéricas
+        anos_series = pd.to_numeric(df_evaluacion['ANO'], errors='coerce')
+        periodos_col = pd.to_numeric(df_evaluacion['PERIODO'], errors='coerce')
+
+        # Filtra por el año solicitado
+        mask = anos_series == ano
+        if not mask.any():
+            print(f"[INFO] /get_periodos: no hay filas para ANO={ano}")
             return jsonify([])
 
-    return jsonify([])
+        # Extrae periodos únicos, válidos y ordenados
+        periodos = (
+            periodos_col[mask]
+            .dropna()
+            .astype(int)
+            .unique()
+            .tolist()
+        )
+        periodos.sort()
+
+        print(f"[DEBUG] /get_periodos -> ANO={ano}, PERIODOS={periodos}")
+        return jsonify(periodos)
+
+    except Exception as e:
+        print(f"[ERROR] /get_periodos exception: {e}")
+        return jsonify([])
+
 
 @app.route('/get_sedes')
 def get_sedes():
