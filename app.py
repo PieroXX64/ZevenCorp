@@ -8,10 +8,13 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Necesario para manejar sesiones
 
 # URL de la API de SheetDB para los resultados (esto ya lo tienes)
-SHEETDB_API_URL_RESULTADOS = "https://sheetdb.io/api/v1/t5uvp45rl7ias"  # URL para los resultados
+SHEETDB_API_URL = "https://sheetdb.io/api/v1/t5uvp45rl7ias"  # URL para los resultados
 
 # URL de la API de SheetDB para los filtros (deberás poner esta URL específica para tu caso)
 SHEETDB_API_URL_FILTERS = "https://sheetdb.io/api/v1/4m9mlphf2sk56"  # Reemplaza con la URL de tu hoja de filtros
+
+# Alias para estandarizar y evitar NameError
+SHEETDB_API_URL_RESULTADOS = SHEETDB_API_URL
 
 # Variable global para almacenar el DataFrame cargado
 df_evaluacion = pd.DataFrame()
