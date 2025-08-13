@@ -344,12 +344,12 @@ import requests  # Necesitamos esta librería para interactuar con SheetDB
 
 @app.route('/guardar_resultado_tp', methods=['POST'])
 def guardar_resultado_tp():
-    """Guardar el resultado del formulario TP en Google Sheets usando SheetDB."""  
+    """Guardar el resultado del formulario TP en Google Sheets usando SheetDB (aplanando respuestas)."""
     try:
         data = request.get_json()
-        print(f"[INFO] Datos recibidos: {data}")  # Verificar que los datos son correctos
+        print(f"[INFO] Datos recibidos: {data}")
 
-        # Crear el diccionario con los datos del formulario
+        # --- Campos base (filtros + totales por sección) ---
         nuevo_registro = {
             "ANO": data.get("ANO", ""),
             "PERIODO": data.get("PERIODO", ""),
@@ -359,25 +359,46 @@ def guardar_resultado_tp():
             "Asignatura": data.get("Asignatura", ""),
             "INSTRUCTOR": data.get("INSTRUCTOR", ""),
             "NRC": data.get("NRC", ""),
-            "Eval_Aula": data.get("Eval_Aula", ""),
-            "Eval_Carpeta": data.get("Eval_Carpeta", ""),
-            # Añadir más campos de respuestas según tu formulario
+            # Totales/porcentajes y resultados por sección
+            "Aula_Porcentaje": data.get("Eval_Aula", ""),
+            "Aula_Resultado": data.get("Resultado_Aula", ""),
+            "Carpeta_Porcentaje": data.get("Eval_Carpeta", ""),
+            "Carpeta_Resultado": data.get("Resultado_Carpeta", ""),
         }
 
-        # Realizar una solicitud POST a SheetDB para guardar los datos
-        response = requests.post(SHEETDB_API_URL, json=nuevo_registro)
+        # --- Sección AULA: aplanar preguntas ---
+        # Espera data.respuestasAula como lista de objetos:
+        # { valoracion: str, puntaje: str/num, observaciones: str, recomendaciones: str }
+        respuestas_aula = data.get("respuestasAula", []) or []
+        for idx, item in enumerate(respuestas_aula, start=1):
+            nuevo_registro[f"A{idx}_Valoracion"] = (item.get("valoracion") or "").strip()
+            nuevo_registro[f"A{idx}_Puntaje"] = item.get("puntaje") or ""
+            nuevo_registro[f"A{idx}_Observaciones"] = (item.get("observaciones") or "").strip()
+            nuevo_registro[f"A{idx}_Recomendaciones"] = (item.get("recomendaciones") or "").strip()
 
-        # Verificamos si la respuesta tiene el campo "created"
-        response_data = response.json()
-        print(f"[INFO] Respuesta de SheetDB: {response_data}")
+        # --- Sección CARPETA: aplanar preguntas ---
+        # Espera data.respuestasCarpeta como lista de objetos:
+        # { valoracion: str, observaciones: str, recomendaciones: str }
+        respuestas_carpeta = data.get("respuestasCarpeta", []) or []
+        for idx, item in enumerate(respuestas_carpeta, start=1):
+            nuevo_registro[f"C{idx}_Valoracion"] = (item.get("valoracion") or "").strip()
+            nuevo_registro[f"C{idx}_Observaciones"] = (item.get("observaciones") or "").strip()
+            nuevo_registro[f"C{idx}_Recomendaciones"] = (item.get("recomendaciones") or "").strip()
+
+        # --- Envío a SheetDB ---
+        response = requests.post(SHEETDB_API_URL, json=nuevo_registro, timeout=30)
+        response_data = {}
+        try:
+            response_data = response.json()
+        except Exception:
+            pass
+
+        print(f"[INFO] Respuesta de SheetDB: {response.status_code} {response_data}")
 
         if response.status_code == 200 or response_data.get('created') == 1:
-            # Si "created" está presente y es igual a 1, significa que el registro fue creado
             return jsonify({"status": "ok", "mensaje": "Evaluación guardada exitosamente"})
         else:
-            # Si no "created" o tiene un valor diferente a 1, devolvemos mensaje de error
-            print(f"[ERROR] Error al guardar la evaluación: {response_data}")
-            return jsonify({"status": "error", "mensaje": "Error al guardar la evaluación: " + str(response_data)})
+            return jsonify({"status": "error", "mensaje": f"Error al guardar: {response_data or response.text}"})
 
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
