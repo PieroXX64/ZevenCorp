@@ -407,6 +407,61 @@ def guardar_resultado_tp():
     except Exception as e:
         print(f"[ERROR] Error al guardar la evaluación: {e}")
         return jsonify({"status": "error", "mensaje": str(e)})
+
+@app.route('/guardar_resultado_p', methods=['POST'])
+def guardar_resultado_p():
+    """Guardar el resultado del formulario P en Google Sheets usando SheetDB."""
+    try:
+        data = request.get_json()
+        print(f"[INFO] Datos recibidos (P): {data}")
+
+        # --- Metadatos + totales ---
+        nuevo_registro = {
+            "ANO": data.get("ANO", ""),
+            "PERIODO": data.get("PERIODO", ""),
+            "SEDE_CURSO": data.get("SEDE_CURSO", ""),
+            "Carrera": data.get("Carrera", ""),
+            "Seccion": data.get("Seccion", ""),
+            "Asignatura": data.get("Asignatura", ""),
+            "INSTRUCTOR": data.get("INSTRUCTOR", ""),
+            "NRC": data.get("NRC", ""),
+            "Eval_Aula": data.get("Eval_Aula", ""),
+            "Resultado_Aula": data.get("Resultado_Aula", ""),
+            "Eval_Carpeta": data.get("Eval_Carpeta", ""),
+            "Resultado_Carpeta": data.get("Resultado_Carpeta", ""),
+        }
+
+        # --- AULA (criterios): Puntaje, Observaciones, Recomendaciones ---
+        # Espera: data.respuestasAula = [{puntaje, observaciones, recomendaciones}, ...]
+        respuestas_aula = data.get("respuestasAula", []) or []
+        for idx, item in enumerate(respuestas_aula, start=1):
+            nuevo_registro[f"A{idx}_Puntaje"] = item.get("puntaje") or ""
+            nuevo_registro[f"A{idx}_Observaciones"] = (item.get("observaciones") or "").strip()
+            nuevo_registro[f"A{idx}_Recomendaciones"] = (item.get("recomendaciones") or "").strip()
+
+        # --- CARPETA: Valoracion, Observaciones, Recomendaciones ---
+        # Espera: data.respuestasCarpeta = [{valoracion, observaciones, recomendaciones}, ...]
+        respuestas_carpeta = data.get("respuestasCarpeta", []) or []
+        for idx, item in enumerate(respuestas_carpeta, start=1):
+            nuevo_registro[f"C{idx}_Valoracion"] = (item.get("valoracion") or "").strip()
+            nuevo_registro[f"C{idx}_Observaciones"] = (item.get("observaciones") or "").strip()
+            nuevo_registro[f"C{idx}_Recomendaciones"] = (item.get("recomendaciones") or "").strip()
+
+        # --- Envío a la hoja "P" ---
+        resp = requests.post(f"{SHEETDB_API_URL}?sheet=P", json=nuevo_registro, timeout=30)
+        try:
+            data_resp = resp.json()
+        except Exception:
+            data_resp = {}
+
+        print(f"[INFO] SheetDB P -> {resp.status_code} {data_resp}")
+        if resp.status_code == 200 or data_resp.get("created") == 1:
+            return jsonify({"status": "ok", "mensaje": "Evaluación P guardada"})
+        else:
+            return jsonify({"status": "error", "mensaje": f"Error al guardar: {data_resp or resp.text}"})
+    except Exception as e:
+        print(f"[ERROR] guardar_resultado_p: {e}")
+        return jsonify({"status": "error", "mensaje": str(e)})
     
 @app.route('/formulario_p')
 def formulario_p():
