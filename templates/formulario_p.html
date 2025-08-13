@@ -14,16 +14,9 @@
     .btn-green { background-color: green; color: white; padding: 0.6em 1.2em; border: none; cursor: pointer; }
     summary { font-weight: bold; cursor: pointer; margin: 0.5em 0; }
     details { margin-bottom: 0.5em; }
-    details p {
-        font-size: 1rem;
-        margin: 0;
-        word-wrap: break-word; /* Asegura que los textos largos se ajusten al tamaño del contenedor */
-    }
-    textarea {
-        height: 100px;
-        font-size: 1rem;
-        resize: vertical; /* Permite ajustar el tamaño del textarea */
-    }
+    details p { font-size: 1rem; margin: 0; word-wrap: break-word; }
+    textarea { height: 100px; font-size: 1rem; resize: vertical; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -43,7 +36,6 @@
 
     <button type="button" id="continuar-btn" class="btn-green">Continuar con la Evaluación de la carpeta pedagógica – PROY. Y EFSRT</button>
 
-    <!-- La segunda sección debe estar oculta inicialmente -->
     <div class="form-section hidden" id="carpeta">
       <h2>Evaluación de la carpeta pedagógica – PROY. Y EFSRT</h2>
       <div id="preguntas-carpetas"></div>
@@ -55,7 +47,7 @@
         <input type="text" id="resultado-carpetas" class="resultado-final" readonly>
       </div>
 
-     <button type="button" id="btn-enviar" class="btn-green">ENVIAR</button>
+      <button type="button" id="btn-enviar" class="btn-green">ENVIAR</button>
     </div>
   </form>
 </div>
@@ -118,10 +110,7 @@ criterios.forEach((criterio, i) => {
   div.innerHTML = `
     <div class="campo"><label>Criterio ${i + 1}: ${criterio.nombre}</label></div>
     ${criterio.niveles.map(([nivel, texto]) => `
-      <details>
-        <summary>${nivel}</summary>
-        <p>${texto}</p>
-      </details>
+      <details><summary>${nivel}</summary><p>${texto}</p></details>
     `).join('')}
     <div class="campo">
       <label>Puntaje:</label>
@@ -130,26 +119,22 @@ criterios.forEach((criterio, i) => {
         <option>1</option><option>2</option><option>3</option><option>4</option>
       </select>
     </div>
-    <div class="campo"><label>Observaciones:</label><textarea></textarea></div>
-    <div class="campo"><label>Recomendaciones:</label><textarea></textarea></div>
+    <div class="campo"><label>Observaciones:</label><textarea class="obs-aula"></textarea></div>
+    <div class="campo"><label>Recomendaciones:</label><textarea class="rec-aula"></textarea></div>
   `;
   contenedor.appendChild(div);
 });
 
-// Calcular el puntaje y porcentaje
-function calcularResultados() {
-  let total = 0;
-  let count = 0;
-  document.querySelectorAll(".puntaje").forEach(s => {
-    const val = parseFloat(s.value);
-    if (!isNaN(val)) {
-      total += val;
-      count++;
-    }
+// cálculo AULA
+function calcularResultadosAula() {
+  let total = 0, count = 0;
+  document.querySelectorAll("#criterios .puntaje").forEach(s => {
+    const v = parseFloat(s.value);
+    if (!isNaN(v)) { total += v; count++; }
   });
   const porcentaje = count ? (total / (4 * count) * 100).toFixed(2) : "";
   document.getElementById("total-puntaje").value = total;
-  document.getElementById("porcentaje").value = porcentaje ? porcentaje + "%" : "";
+  document.getElementById("porcentaje").value = porcentaje ? (porcentaje + "%") : "";
   const resultado = document.getElementById("resultado-final");
   if (porcentaje >= 90) resultado.value = "DESTACADO";
   else if (porcentaje >= 75) resultado.value = "LOGRADO";
@@ -157,15 +142,9 @@ function calcularResultados() {
   else if (porcentaje > 0) resultado.value = "EN INICIO";
   else resultado.value = "";
 }
+document.querySelectorAll("#criterios .puntaje").forEach(s => s.addEventListener("change", calcularResultadosAula));
 
-// evento de cambio
-setTimeout(() => {
-  document.querySelectorAll(".puntaje").forEach(select => {
-    select.addEventListener("change", calcularResultados);
-  });
-}, 100);
-
-// Función para mostrar la segunda sección (carpeta) al hacer clic en el botón
+// mostrar carpeta
 document.getElementById("continuar-btn").addEventListener("click", () => {
   document.getElementById("carpeta").classList.remove("hidden");
 });
@@ -190,22 +169,63 @@ preguntasCarpeta.forEach((pregunta, i) => {
     <div class="campo"><label>Peso:</label><input type="text" value="12.5" readonly></div>
     <div class="campo">
       <label>Valoración:</label>
-      <select class="valoracion">
+      <select class="valoracion-carpetas">
         <option value="">Seleccione</option>
         <option>Se observa</option>
         <option>Se observa parcialmente</option>
         <option>No se observa</option>
       </select>
     </div>
-    <div class="campo"><label>Observaciones:</label><textarea></textarea></div>
-    <div class="campo"><label>Recomendaciones:</label><textarea></textarea></div>
+    <div class="campo"><label>Observaciones:</label><textarea class="obs-car"></textarea></div>
+    <div class="campo"><label>Recomendaciones:</label><textarea class="rec-car"></textarea></div>
   `;
   contenedorCarpeta.appendChild(div);
 });
 
-// Función para enviar la evaluación
+// cálculo CARPETA
+function calcularResultadosCarpeta() {
+  const total = document.querySelectorAll(".valoracion-carpetas").length;
+  const observados = [...document.querySelectorAll(".valoracion-carpetas")]
+    .filter(s => s.value === "Se observa").length;
+  const porcentaje = total ? ((observados / total) * 100).toFixed(2) : "";
+  document.getElementById("porcentaje-carpetas").value = porcentaje ? (porcentaje + "%") : "";
+  const r = document.getElementById("resultado-carpetas");
+  if (porcentaje == 100) r.value = "LOGRADO";
+  else if (porcentaje >= 50) r.value = "EN PROCESO";
+  else if (porcentaje > 0) r.value = "EN INICIO";
+  else r.value = "";
+}
+document.querySelectorAll(".valoracion-carpetas").forEach(s => s.addEventListener("change", calcularResultadosCarpeta));
+
+// ---- Enviar ----
 document.getElementById("btn-enviar").addEventListener("click", async () => {
-  const filtros = {
+  // AULA
+  const respuestasAula = [];
+  document.querySelectorAll("#criterios .criterio").forEach(p => {
+    respuestasAula.push({
+      puntaje: (p.querySelector(".puntaje")?.value || ""),
+      observaciones: (p.querySelector(".obs-aula")?.value || ""),
+      recomendaciones: (p.querySelector(".rec-aula")?.value || "")
+    });
+  });
+
+  // CARPETA
+  const respuestasCarpeta = [];
+  document.querySelectorAll("#preguntas-carpetas .criterio").forEach(p => {
+    respuestasCarpeta.push({
+      valoracion: (p.querySelector(".valoracion-carpetas")?.value || ""),
+      observaciones: (p.querySelector(".obs-car")?.value || ""),
+      recomendaciones: (p.querySelector(".rec-car")?.value || "")
+    });
+  });
+
+  // Totales visibles
+  const porcentajeAula = parseFloat((document.getElementById("porcentaje").value || "").replace("%","")) || 0;
+  const resultadoAula = document.getElementById("resultado-final").value || "";
+  const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
+  const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
+
+  const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
     SEDE_CURSO: sessionStorage.getItem("sede_curso"),
@@ -214,37 +234,27 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Asignatura: sessionStorage.getItem("asignatura"),
     INSTRUCTOR: sessionStorage.getItem("instructor"),
     NRC: sessionStorage.getItem("nrc"),
-    Eval_Aula: calcularPorcentajeAula(),
-    Eval_Carpeta: calcularPorcentajeCarpeta()
+    Eval_Aula: porcentajeAula,
+    Resultado_Aula: resultadoAula,
+    Eval_Carpeta: porcentajeCarpeta,
+    Resultado_Carpeta: resultadoCarpeta,
+    respuestasAula,
+    respuestasCarpeta
   };
 
-  const response = await fetch("/guardar_resultado", {
+  const resp = await fetch("/guardar_resultado_p", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(filtros)
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
   });
-
-  const result = await response.json();
+  const result = await resp.json();
   if (result.status === "ok") {
     alert("Evaluación guardada exitosamente.");
-    window.location.href = "/";  // Redirige al inicio
+    window.location.href = "/";
   } else {
     alert("Error al guardar la evaluación: " + result.mensaje);
   }
 });
-
-// Calcular porcentajes
-function calcularPorcentajeAula() {
-  return parseFloat(document.getElementById("porcentaje").value) || 0;
-}
-
-function calcularPorcentajeCarpeta() {
-  return parseFloat(document.getElementById("porcentaje-carpetas").value) || 0;
-}
-
 </script>
-
 </body>
 </html>
