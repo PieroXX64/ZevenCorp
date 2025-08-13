@@ -428,10 +428,10 @@ def guardar_resultado_p():
             "Asignatura": data.get("Asignatura", ""),
             "INSTRUCTOR": data.get("INSTRUCTOR", ""),
             "NRC": data.get("NRC", ""),
-            "Eval_Aula": data.get("Eval_Aula", ""),
-            "Resultado_Aula": data.get("Resultado_Aula", ""),
-            "Eval_Carpeta": data.get("Eval_Carpeta", ""),
-            "Resultado_Carpeta": data.get("Resultado_Carpeta", ""),
+            "Aula_Porcentaje": data.get("Eval_Aula", ""),
+            "Aula_Resultado": data.get("Resultado_Aula", ""),
+            "Carpeta_Porcentaje": data.get("Eval_Carpeta", ""),
+            "Carpeta_Resultado": data.get("Resultado_Carpeta", ""),
         }
 
         # --- AULA (criterios): Puntaje, Observaciones, Recomendaciones ---
