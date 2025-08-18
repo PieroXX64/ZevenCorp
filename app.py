@@ -367,7 +367,8 @@ def guardar_resultado_tp():
             "Aula_Resultado": data.get("Resultado_Aula", ""),
             "Carpeta_Porcentaje": data.get("Eval_Carpeta", ""),
             "Carpeta_Resultado": data.get("Resultado_Carpeta", ""),
-            "fechaRegistro": data.get("fechaRegistro", "")  # Asegúrate de capturar la hora
+            "fechaRegistro": data.get("fechaRegistro", ""),  # Asegúrate de capturar la hora
+            "fechaEvaluacion": data.get("fechaEvaluacion", "")  # Esta es la fecha manual
         }
 
         # --- Sección AULA: aplanar preguntas ---
@@ -433,7 +434,8 @@ def guardar_resultado_p():
             "Aula_Resultado": data.get("Resultado_Aula", ""),
             "Carpeta_Porcentaje": data.get("Eval_Carpeta", ""),
             "Carpeta_Resultado": data.get("Resultado_Carpeta", ""),
-            "fechaRegistro": data.get("fechaRegistro", "")  # Asegúrate de capturar la hora
+            "fechaRegistro": data.get("fechaRegistro", ""),  # Asegúrate de capturar la hora
+            "fechaEvaluacion": data.get("fechaEvaluacion", "")  # Esta es la fecha manual
         }
 
         # --- AULA (criterios): Puntaje, Observaciones, Recomendaciones ---
