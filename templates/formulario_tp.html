@@ -219,7 +219,8 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
  // Capturamos la fecha y hora actuales
   const fechaRegistro = new Date().toISOString().split('T')[0];  // Esto extrae solo la fecha (YYYY-MM-DD)
-  
+  // Capturamos la fecha manual seleccionada
+  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro;  // Si no se elige una fecha, usamos la fecha de registro
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -235,7 +236,8 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
     respuestasCarpeta,
-    fechaRegistro // Nueva clave para la hora
+    fechaRegistro, // Nueva clave para la hora
+    fechaEvaluacion  // Fecha manual seleccionada
   };
 
   const response = await fetch("/guardar_resultado_tp", {
