@@ -354,6 +354,7 @@ def guardar_resultado_tp():
 
         # --- Campos base (filtros + totales por sección) ---
         nuevo_registro = {
+            "horaRegistro": data.get("horaRegistro", "")  # Asegúrate de capturar la hora
             "ANO": data.get("ANO", ""),
             "PERIODO": data.get("PERIODO", ""),
             "SEDE_CURSO": data.get("SEDE_CURSO", ""),
