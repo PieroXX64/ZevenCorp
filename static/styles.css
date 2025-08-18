@@ -10,6 +10,7 @@ h1 {
     color: #333;
     text-align: center;
     margin-top: 20px;
+    font-size: 28px;  /* Reducido el tamaño del título */
 }
 
 .container {
@@ -55,6 +56,32 @@ button:hover {
     background-color: #45a049;
 }
 
+/* Estilo para el botón "Cargar Datos" más pequeño */
+#loadDataButton {
+    padding: 8px 15px; /* Más pequeño */
+    font-size: 14px; /* Texto más pequeño */
+    background-color: #f1f1f1;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    opacity: 0.7;  /* Menos visible */
+    display: block;
+    margin: 20px auto;
+}
+
+#loadDataButton:hover {
+    opacity: 1;
+}
+
+/* Título en la página de inicio (ZEVEN CORP) */
+h1 {
+    font-size: 28px; /* Reducir tamaño de título */
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
 /* Enlaces */
 a {
     color: #4CAF50;
@@ -95,4 +122,3 @@ ul li {
         font-size: 22px;
     }
 }
-
