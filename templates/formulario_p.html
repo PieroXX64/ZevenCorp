@@ -225,7 +225,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
   // Capturamos la fecha y hora actuales
-  const horaRegistro = new Date().toISOString(); // Formato ISO 8601, por ejemplo: "2025-08-18T12:30:45.000Z"
+  const fechaRegistro = new Date().toISOString().split('T')[0];  // Esto extrae solo la fecha (YYYY-MM-DD)
   
   const payload = {
     ANO: sessionStorage.getItem("ano"),
@@ -241,9 +241,8 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Eval_Carpeta: porcentajeCarpeta,
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
-    respuestasCarpeta
-
-    horaRegistro // Nueva clave para la hora
+    respuestasCarpeta,
+    fechaRegistro // Nueva clave para la hora
   };
 
   const resp = await fetch("/guardar_resultado_p", {
