@@ -209,7 +209,9 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   const resultadoAula = document.getElementById("resultado-final").value || "";
   const porcentajeCarpeta = calcularPorcentajeCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
-
+ // Capturamos la fecha y hora actuales
+  const horaRegistro = new Date().toISOString(); // Formato ISO 8601, por ejemplo: "2025-08-18T12:30:45.000Z"
+  
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -225,6 +227,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
     respuestasCarpeta
+    horaRegistro // Nueva clave para la hora
   };
 
   const response = await fetch("/guardar_resultado_tp", {
