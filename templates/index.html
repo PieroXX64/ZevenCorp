@@ -7,13 +7,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>ZEVEN CORP</h1>
+        <h1 class="titulo">ZEVEN CORP</h1>
         <ul>
-            <li><a href="{{ url_for('evaluacion_docente') }}"><button>EVALUACIÓN DOCENTE</button></a></li>
+            <li><a href="{{ url_for('evaluacion_docente') }}"><button class="btn-evaluacion">EVALUACIÓN DOCENTE</button></a></li>
         </ul>
         
         <!-- Botón para cargar los datos desde S3 -->
-        <button id="loadDataButton">Cargar Datos</button>
+        <button id="loadDataButton" class="btn-cargar-datos">Cargar Datos</button>
 
         <!-- Script para manejar el clic en el botón y cargar los datos -->
         <script>
