@@ -183,6 +183,8 @@ document.querySelectorAll(".valoracion-carpetas").forEach(select => {
 
 <script>
 document.getElementById("btn-enviar").addEventListener("click", async () => {
+  console.log("Botón ENVIAR clickeado"); // Esto ayuda a ver si se dispara el evento
+  // Tu lógica de recolección de respuestas y envío a SheetDB sigue aquí
   // --- AULA: recolectar por bloque ---
   const respuestasAula = [];
   document.querySelectorAll("#preguntas-aula .pregunta").forEach(p => {
@@ -226,7 +228,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Eval_Carpeta: porcentajeCarpeta,
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
-    respuestasCarpeta
+    respuestasCarpeta,
     horaRegistro // Nueva clave para la hora
   };
 
