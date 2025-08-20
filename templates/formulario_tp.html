@@ -44,6 +44,7 @@
         <input type="text" id="resultado-carpetas" class="resultado-final" readonly>
       </div>
 
+      <!-- Campo para la fecha manual (fechaEvaluacion) -->
       <div class="form-section">
         <label>Fecha de Evaluación:</label>
         <input type="date" id="fecha-evaluacion">
@@ -57,22 +58,23 @@
 </div>
 
 <script>
-// Preguntas de aula
+// Datos de las preguntas de aula
 const preguntasAula = [
-  ["Comparte de forma explícita...", 2],
-  ["Comparte dos o más ejemplos...", 2],
-  ["Comunica puntos clave...", 1],
-  ["Explica temas con recursos...", 2],
-  ["Explica procedimiento práctico...", 2],
-  ["Realiza preguntas abiertas...", 3],
-  ["Logra participación activa...", 3],
-  ["Actividad en parejas/equipo...", 3],
-  ["Emplea recursos TIC...", 1],
-  ["Monitorea trabajo estudiantil...", 2],
-  ["Retroalimenta participación...", 3],
-  ["Refuerza positivamente...", 1]
+  ["Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.", 2],
+  ["Comparte dos o más ejemplos, experiencias profesionales o explicaciones que conectan de forma explícita los temas tratados en la sesión con el mundo laboral.", 2],
+  ["Comunica, en al menos dos momentos distintos, los puntos clave (b) de los temas a tratar durante la sesión.", 1],
+  ["Explica de forma clara y detallada los temas que van trabajarse y aplicarse durante la sesión (qué, por qué y para qué), usando diversas estrategias y recursos (diagramas, esquemas, pizarra, videos cortos u otros) para reforzar las explicaciones (c).", 2],
+  ["Explica de forma clara y detallada el procedimiento práctico para aplicar los temas aprendidos durante la sesión (el paso a paso del cómo) , haciendo demostraciones para mejorar la comprensión de los/as estudiantes (d).", 2],
+  ["Realiza preguntas y repreguntas abiertas y dirigidas a estudiantes específicos, para verificar la comprensión de los temas tratados durante la mayor parte del tiempo de la sesión (e).", 3],
+  ["Logra que más de 75% de los/as estudiantes participen de forma activa (f), brindando ideas, opiniones, respondiendo sus preguntas o haciendo ellos/as preguntas durante la mayor parte de la sesión.", 3],
+  ["Realiza al menos una actividad de trabajo en parejas o en equipo en el que participan todos/as los/as estudiantes (g).", 3],
+  ["Emplea recursos didácticos, en al menos dos oportunidades distintas, considerando mínimamente uno TIC (h), para el desarrollo de los aprendizajes de la sesión.", 1],
+  ["Monitorea de forma activa el trabajo de los/as estudiantes, haciendo recorridos al aula, preguntando y repreguntado sobre los temas tratados.", 2],
+  ["Retroalimenta la participación de los/as estudiantes, a partir de preguntas de reflexión y brindando pistas para lograr que lleguen a la respuesta por sus propios medios.", 3],
+  ["Refuerza positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades.", 1]
 ];
 
+// Mostrar las preguntas en el formulario
 const containerAula = document.getElementById("preguntas-aula");
 preguntasAula.forEach((pregunta, i) => {
   const index = i + 1;
@@ -101,28 +103,50 @@ preguntasAula.forEach((pregunta, i) => {
   containerAula.appendChild(div);
 });
 
-// Eventos para aula
+// Calcular puntajes automáticamente cuando se cambia la valoración
 document.querySelectorAll(".valoracion-aula").forEach(select => {
   select.addEventListener("change", () => {
     const valoracion = select.value;
     const peso = parseFloat(select.closest(".pregunta").querySelector("input[type='text']").value);
     let puntaje = 0;
-    if (valoracion === "Se observa") puntaje = peso;
+    
+    // Asignar puntaje según la valoración
+    if (valoracion === "Se observa") puntaje = peso * 1;
     else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;
+    else if (valoracion === "No se observa") puntaje = peso * 0;
+    
+    // Asignar el puntaje calculado al campo correspondiente
     select.closest(".pregunta").querySelector(".puntaje").value = puntaje;
+    
+    // Recalcular los resultados
     calcularResultados();
   });
 });
 
+// Calcular resultados globales
 function calcularResultados() {
   let total = 0;
+  let count = 0;
+  
+  // Calculamos el puntaje total sumando los puntajes seleccionados
   document.querySelectorAll(".puntaje").forEach(s => {
     const val = parseFloat(s.value);
-    if (!isNaN(val)) total += val;
+    if (!isNaN(val)) {
+      total += val;
+      count++;
+    }
   });
+  
+  // Calculamos el porcentaje dividiendo el total de puntajes por 25 (puntaje máximo)
   const porcentaje = (total / 25 * 100).toFixed(2);
+  
+  // Asignamos el total puntaje al campo correspondiente
   document.getElementById("total-puntaje").value = total;
+  
+  // Asignamos el porcentaje calculado al campo correspondiente
   document.getElementById("porcentaje").value = porcentaje + "%";
+  
+  // Determinamos el resultado final según el porcentaje
   const resultado = document.getElementById("resultado-final");
   if (porcentaje >= 90) resultado.value = "DESTACADO";
   else if (porcentaje >= 75) resultado.value = "LOGRADO";
@@ -131,20 +155,20 @@ function calcularResultados() {
   else resultado.value = "";
 }
 
+// Mostrar segunda sección (Carpeta)
 function mostrarSegundaSeccion() {
   document.getElementById("seccion-carpetas").classList.remove("hidden");
 }
 
-// Preguntas de carpeta
 const preguntasCarpeta = [
   "¿La versión del sílabo es la correcta?",
   "¿Los datos del sílabo están actualizados?",
   "¿El plan de clase está alineado con la sesión observada?",
   "¿La asignación de fechas está actualizada?",
-  "¿Los planes de clase están cargados?",
-  "¿Las PPT y recursos están alineados?",
-  "¿Se cuenta con el registro de asistencia?",
-  "¿Se cuenta con el registro de evaluaciones?"
+  "¿Los planes de clase están cargados (ocultos al estudiante)?",
+  "¿Las PPT y recursos están alineados con lo ejecutado?",
+  "¿Se cuenta con el registro de asistencia actualizado?",
+  "¿Se cuenta con el registro de evaluaciones actualizado?"
 ];
 
 const containerCarpeta = document.getElementById("preguntas-carpetas");
@@ -170,69 +194,68 @@ preguntasCarpeta.forEach((pregunta, i) => {
   containerCarpeta.appendChild(div);
 });
 
-// Eventos para carpeta
-document.querySelectorAll(".valoracion-carpetas").forEach(select => {
-  select.addEventListener("change", () => {
-    calcularResultadosCarpeta();
-  });
-});
-  
+// Calcular resultados de la sección Carpeta
 function calcularResultadosCarpeta() {
   let totalCarpeta = 0;
-
-  document.querySelectorAll(".valoracion-carpetas").forEach(s => {
-    const valoracion = s.value;
-    const peso = 12.5;
+  
+  // Calcular puntaje total de la sección Carpeta sumando los puntajes calculados
+  document.querySelectorAll(".valoracion-carpetas").forEach(select => {
+    const valoracion = select.value;
+    const peso = 12.5; // Asumimos que el peso por pregunta es 12.5
     let puntaje = 0;
-
-    if (valoracion === "Se observa") puntaje = peso;
+    
+    // Asignar puntaje según la valoración
+    if (valoracion === "Se observa") puntaje = peso * 1;
     else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;
+    else if (valoracion === "No se observa") puntaje = peso * 0;
+    
     totalCarpeta += puntaje;
   });
-
-  const porcentajeCarpeta = totalCarpeta.toFixed(2);
-  document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
-
+  
+  // Asignar el porcentaje calculado al campo correspondiente
+  document.getElementById("porcentaje-carpetas").value = totalCarpeta + "%";
+  
+  // Determinar el resultado final para Carpeta
   const resultadoCarpeta = document.getElementById("resultado-carpetas");
-  if (porcentajeCarpeta >= 90) resultadoCarpeta.value = "DESTACADO";
-  else if (porcentajeCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
-  else if (porcentajeCarpeta >= 50) resultadoCarpeta.value = "EN PROCESO";
-  else if (porcentajeCarpeta > 0) resultadoCarpeta.value = "EN INICIO";
+  if (totalCarpeta >= 90) resultadoCarpeta.value = "DESTACADO";
+  else if (totalCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
+  else if (totalCarpeta >= 50) resultadoCarpeta.value = "EN PROCESO";
+  else if (totalCarpeta > 0) resultadoCarpeta.value = "EN INICIO";
   else resultadoCarpeta.value = "";
-
-  return porcentajeCarpeta;
 }
 
 // Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
-  // Recalcular resultados antes de enviar
-  calcularResultados();
-  const porcentajeCarpeta = calcularResultadosCarpeta();
-
+  // --- AULA ---
   const respuestasAula = [];
   document.querySelectorAll("#preguntas-aula .pregunta").forEach(p => {
     respuestasAula.push({
-      valoracion: p.querySelector(".valoracion-aula")?.value || "",
-      puntaje: p.querySelector(".puntaje")?.value || "",
-      observaciones: p.querySelector(".obs-aula")?.value || "",
-      recomendaciones: p.querySelector(".rec-aula")?.value || ""
+      valoracion: (p.querySelector(".valoracion-aula")?.value || ""),
+      puntaje: (p.querySelector(".puntaje")?.value || ""),
+      observaciones: (p.querySelector(".obs-aula")?.value || ""),
+      recomendaciones: (p.querySelector(".rec-aula")?.value || "")
     });
   });
 
+  // --- CARPETA ---
   const respuestasCarpeta = [];
   document.querySelectorAll("#preguntas-carpetas .pregunta").forEach(p => {
     respuestasCarpeta.push({
-      valoracion: p.querySelector(".valoracion-carpetas")?.value || "",
-      observaciones: p.querySelector(".obs-car")?.value || "",
-      recomendaciones: p.querySelector(".rec-car")?.value || ""
+      valoracion: (p.querySelector(".valoracion-carpetas")?.value || ""),
+      observaciones: (p.querySelector(".obs-car")?.value || ""),
+      recomendaciones: (p.querySelector(".rec-car")?.value || "")
     });
   });
 
+  // Totales y resultados
+  const porcentajeAula = calcularPorcentajeAula();
   const resultadoAula = document.getElementById("resultado-final").value || "";
+  const porcentajeCarpeta = calcularResultadosCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
-  const fechaRegistro = new Date().toISOString().split('T')[0];
-  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro;
-
+  // Capturamos la fecha y hora actuales 
+  const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
+  // Capturamos la fecha manual seleccionada 
+  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro; // Si no se elige una fecha, usamos la fecha de registro
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -242,34 +265,30 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Asignatura: sessionStorage.getItem("asignatura"),
     INSTRUCTOR: sessionStorage.getItem("instructor"),
     NRC: sessionStorage.getItem("nrc"),
-    Eval_Aula: document.getElementById("porcentaje").value,
+    Eval_Aula: porcentajeAula,
     Resultado_Aula: resultadoAula,
-    Eval_Carpeta: porcentajeCarpeta + "%",
+    Eval_Carpeta: porcentajeCarpeta,
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
     respuestasCarpeta,
-    fechaRegistro,
-    fechaEvaluacion
+    fechaRegistro, // Nueva clave para la hora
+    fechaEvaluacion // Fecha manual seleccionada
   };
 
-  try {
-    const response = await fetch("/guardar_resultado_tp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+  const response = await fetch("/guardar_resultado_tp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 
-    const result = await response.json();
-    if (result.status === "ok") {
-      alert("Evaluación guardada exitosamente.");
-      window.location.href = "/";
-    } else {
-      alert("Error al guardar la evaluación: " + result.mensaje);
-    }
-  } catch (error) {
-    alert("Error de conexión al guardar la evaluación.");
-    console.error(error);
+  const result = await response.json();
+  if (result.status === "ok") {
+    alert("Evaluación guardada exitosamente.");
+    window.location.href = "/";
+  } else {
+    alert("Error al guardar la evaluación: " + result.mensaje);
   }
 });
-
-
+</script>
+</body>
+</html>
