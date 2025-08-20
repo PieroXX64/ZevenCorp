@@ -9,7 +9,7 @@
     .pregunta { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; }
     .campo { margin-bottom: 0.5em; }
     label { font-weight: bold; display: block; margin-bottom: 0.3em; }
-    select, input[type="text"] { width: 100%; padding: 0.4em; }
+    select, input[type="text"], input[type="date"] { width: 100%; padding: 0.4em; }
     .resultado-final { font-weight: bold; font-size: 1.2em; }
     .hidden { display: none; }
     .btn-green { background-color: green; color: white; padding: 0.6em 1.2em; border: none; cursor: pointer; }
@@ -58,6 +58,7 @@
 </div>
 
 <script>
+// Datos de las preguntas de aula
 const preguntasAula = [
   ["Comparte de forma explícita (a) el aprendizaje esperado que se tiene previsto para los/as estudiantes, en al menos dos distintos momentos de la sesión.", 2],
   ["Comparte dos o más ejemplos, experiencias profesionales o explicaciones que conectan de forma explícita los temas tratados en la sesión con el mundo laboral.", 2],
@@ -73,6 +74,7 @@ const preguntasAula = [
   ["Refuerza positivamente la participación de los/as estudiantes, resaltando sus logros y brindándoles apertura para resolver sus consultas o dificultades.", 1]
 ];
 
+// Mostrar las preguntas en el formulario
 const containerAula = document.getElementById("preguntas-aula");
 preguntasAula.forEach((pregunta, i) => {
   const index = i + 1;
@@ -93,10 +95,7 @@ preguntasAula.forEach((pregunta, i) => {
     </div>
     <div class="campo">
       <label>Puntaje:</label>
-      <select class="puntaje" data-peso="${peso}">
-        <option value="">Seleccione</option>
-        ${[...Array(peso * 2 + 1)].map((_, i) => `<option>${(i * 0.5).toFixed(1)}</option>`).join('')}
-      </select>
+      <input type="text" class="puntaje" readonly>
     </div>
     <div class="campo"><label>Observaciones:</label><input type="text" class="obs-aula"></div>
     <div class="campo"><label>Recomendaciones:</label><input type="text" class="rec-aula"></div>
@@ -142,6 +141,7 @@ function calcularResultados() {
   else resultado.value = "";
 }
 
+// Mostrar segunda sección (Carpeta)
 function mostrarSegundaSeccion() {
   document.getElementById("seccion-carpetas").classList.remove("hidden");
 }
@@ -180,36 +180,9 @@ preguntasCarpeta.forEach((pregunta, i) => {
   containerCarpeta.appendChild(div);
 });
 
-document.querySelectorAll(".valoracion-carpetas").forEach(select => {
-  select.addEventListener("change", () => {
-    const total = document.querySelectorAll(".valoracion-carpetas").length;
-    const observados = [...document.querySelectorAll(".valoracion-carpetas")]
-      .filter(s => s.value === "Se observa").length;
-    const porcentaje = ((observados / total) * 100).toFixed(2);
-    document.getElementById("porcentaje-carpetas").value = porcentaje + "%";
-    const resultado = document.getElementById("resultado-carpetas");
-    if (porcentaje == 100) resultado.value = "LOGRADO";
-    else if (porcentaje >= 50) resultado.value = "EN PROCESO";
-    else if (porcentaje > 0) resultado.value = "EN INICIO";
-    else resultado.value = "";
-  });
-});
-</script>
-
-<script>
-  function calcularPorcentajeAula() {
-    return parseFloat(document.getElementById("porcentaje").value) || 0;
-  }
-  function calcularPorcentajeCarpeta() {
-    return parseFloat(document.getElementById("porcentaje-carpetas").value) || 0;
-  }
-</script>
-
-<script>
+// Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
-  console.log("Botón ENVIAR clickeado"); // Esto ayuda a ver si se dispara el evento
-  // Tu lógica de recolección de respuestas y envío a SheetDB sigue aquí
-  // --- AULA: recolectar por bloque ---
+  // --- AULA ---
   const respuestasAula = [];
   document.querySelectorAll("#preguntas-aula .pregunta").forEach(p => {
     respuestasAula.push({
@@ -230,15 +203,12 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     });
   });
 
-  // Totales y resultados (ya visibles en pantalla)
+  // Totales y resultados
   const porcentajeAula = calcularPorcentajeAula();
   const resultadoAula = document.getElementById("resultado-final").value || "";
   const porcentajeCarpeta = calcularPorcentajeCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
- // Capturamos la fecha y hora actuales
-  const fechaRegistro = new Date().toISOString().split('T')[0];  // Esto extrae solo la fecha (YYYY-MM-DD)
-  // Capturamos la fecha manual seleccionada
-  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro;  // Si no se elige una fecha, usamos la fecha de registro
+  
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -254,8 +224,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
     respuestasCarpeta,
-    fechaRegistro, // Nueva clave para la hora
-    fechaEvaluacion  // Fecha manual seleccionada
+    fechaEvaluacion: document.getElementById("fecha-evaluacion").value || new Date().toISOString().split('T')[0]
   };
 
   const response = await fetch("/guardar_resultado_tp", {
@@ -275,5 +244,6 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
