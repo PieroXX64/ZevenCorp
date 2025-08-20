@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -199,20 +199,20 @@ function calcularResultadosCarpeta() {
   let totalCarpeta = 0;
   let countCarpeta = 0;
   
-  // Calculamos el puntaje total de las respuestas de la sección Carpeta
+  // Calcular puntaje total de la sección Carpeta sumando los puntajes calculados
   document.querySelectorAll(".valoracion-carpetas").forEach(s => {
     const val = parseFloat(s.value);
     if (!isNaN(val)) totalCarpeta += val;
     countCarpeta++;
   });
   
-  // Calculamos el porcentaje de la sección Carpeta
-  const porcentajeCarpeta = (totalCarpeta / (12.5 * countCarpeta) * 100).toFixed(2); // Ajusta si el peso total es diferente
+  // Calcular porcentaje de la Carpeta
+  const porcentajeCarpeta = (totalCarpeta / (12.5 * countCarpeta) * 100).toFixed(2); // Ajusta si el peso es diferente
   
-  // Asignamos el porcentaje calculado al campo correspondiente
+  // Asignar el porcentaje calculado al campo correspondiente
   document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
   
-  // Determinamos el resultado final para Carpeta
+  // Determinar el resultado final para Carpeta
   const resultadoCarpeta = document.getElementById("resultado-carpetas");
   if (porcentajeCarpeta >= 90) resultadoCarpeta.value = "DESTACADO";
   else if (porcentajeCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
@@ -249,7 +249,10 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   const resultadoAula = document.getElementById("resultado-final").value || "";
   const porcentajeCarpeta = calcularPorcentajeCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
-  
+  // Capturamos la fecha y hora actuales 
+  const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
+  // Capturamos la fecha manual seleccionada 
+  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro; // Si no se elige una fecha, usamos la fecha de registro
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -265,7 +268,8 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     Resultado_Carpeta: resultadoCarpeta,
     respuestasAula,
     respuestasCarpeta,
-    fechaEvaluacion: document.getElementById("fecha-evaluacion").value || new Date().toISOString().split('T')[0]
+    fechaRegistro, // Nueva clave para la hora
+    fechaEvaluacion // Fecha manual seleccionada
   };
 
   const response = await fetch("/guardar_resultado_tp", {
@@ -285,6 +289,5 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
 </script>
 </body>
 </html>
-
 
 
