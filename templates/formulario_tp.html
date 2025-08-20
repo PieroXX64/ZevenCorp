@@ -130,9 +130,9 @@ function calcularResultados() {
       count++;
     }
   });
-  const porcentaje = count ? (total / (25 * 100).toFixed(2); // Ajustar según el peso
+  const porcentaje = count ? (total / (25 * 100).toFixed(2) : "";  // Ajustar según el peso
   document.getElementById("total-puntaje").value = total;
-  document.getElementById("porcentaje").value = porcentaje + "%";
+  document.getElementById("porcentaje").value = porcentaje ? porcentaje + "%" : "";
   const resultado = document.getElementById("resultado-final");
   if (porcentaje >= 90) resultado.value = "DESTACADO";
   else if (porcentaje >= 75) resultado.value = "LOGRADO";
