@@ -194,6 +194,33 @@ preguntasCarpeta.forEach((pregunta, i) => {
   containerCarpeta.appendChild(div);
 });
 
+// Calcular resultados de la sección Carpeta
+function calcularResultadosCarpeta() {
+  let totalCarpeta = 0;
+  let countCarpeta = 0;
+  
+  // Calculamos el puntaje total de las respuestas de la sección Carpeta
+  document.querySelectorAll(".valoracion-carpetas").forEach(s => {
+    const val = parseFloat(s.value);
+    if (!isNaN(val)) totalCarpeta += val;
+    countCarpeta++;
+  });
+  
+  // Calculamos el porcentaje de la sección Carpeta
+  const porcentajeCarpeta = (totalCarpeta / (12.5 * countCarpeta) * 100).toFixed(2); // Ajusta si el peso total es diferente
+  
+  // Asignamos el porcentaje calculado al campo correspondiente
+  document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
+  
+  // Determinamos el resultado final para Carpeta
+  const resultadoCarpeta = document.getElementById("resultado-carpetas");
+  if (porcentajeCarpeta >= 90) resultadoCarpeta.value = "DESTACADO";
+  else if (porcentajeCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
+  else if (porcentajeCarpeta >= 50) resultadoCarpeta.value = "EN PROCESO";
+  else if (porcentajeCarpeta > 0) resultadoCarpeta.value = "EN INICIO";
+  else resultadoCarpeta.value = "";
+}
+
 // Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
   // --- AULA ---
