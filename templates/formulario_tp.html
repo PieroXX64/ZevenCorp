@@ -104,25 +104,43 @@ preguntasAula.forEach((pregunta, i) => {
   containerAula.appendChild(div);
 });
 
-// Listener SOLO en los puntajes de AULA
-document.querySelectorAll("#preguntas-aula .puntaje").forEach(select => {
+// Calcular puntajes automáticamente cuando se cambia la valoración
+document.querySelectorAll(".valoracion-aula").forEach(select => {
   select.addEventListener("change", () => {
-    let total = 0;
-    document.querySelectorAll("#preguntas-aula .puntaje").forEach(s => {
-      const val = parseFloat(s.value);
-      if (!isNaN(val)) total += val;
-    });
-    const porcentaje = (total / 25 * 100).toFixed(2); // 25 = suma de pesos
-    document.getElementById("total-puntaje").value = total;
-    document.getElementById("porcentaje").value = porcentaje + "%";
-    const resultado = document.getElementById("resultado-final");
-    if (porcentaje >= 90) resultado.value = "DESTACADO";
-    else if (porcentaje >= 75) resultado.value = "LOGRADO";
-    else if (porcentaje >= 50) resultado.value = "EN PROCESO";
-    else if (porcentaje > 0) resultado.value = "EN INICIO";
-    else resultado.value = "";
+    const valoracion = select.value;
+    const peso = parseFloat(select.closest(".pregunta").querySelector("input[type='text']").value);
+    let puntaje = 0;
+    // Asignar puntaje según la valoración
+    if (valoracion === "Se observa") puntaje = peso * 1;
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;
+    else if (valoracion === "No se observa") puntaje = peso * 0;
+    
+    select.closest(".pregunta").querySelector(".puntaje").value = puntaje;
+    calcularResultados();
   });
 });
+
+// Calcular resultados globales
+function calcularResultados() {
+  let total = 0;
+  let count = 0;
+  document.querySelectorAll(".puntaje").forEach(s => {
+    const val = parseFloat(s.value);
+    if (!isNaN(val)) {
+      total += val;
+      count++;
+    }
+  });
+  const porcentaje = count ? (total / (2 * count) * 100).toFixed(2) : ""; // Ajustar según el peso
+  document.getElementById("total-puntaje").value = total;
+  document.getElementById("porcentaje").value = porcentaje ? porcentaje + "%" : "";
+  const resultado = document.getElementById("resultado-final");
+  if (porcentaje >= 90) resultado.value = "DESTACADO";
+  else if (porcentaje >= 75) resultado.value = "LOGRADO";
+  else if (porcentaje >= 50) resultado.value = "EN PROCESO";
+  else if (porcentaje > 0) resultado.value = "EN INICIO";
+  else resultado.value = "";
+}
 
 function mostrarSegundaSeccion() {
   document.getElementById("seccion-carpetas").classList.remove("hidden");
