@@ -197,7 +197,6 @@ preguntasCarpeta.forEach((pregunta, i) => {
 // Calcular resultados de la sección Carpeta
 function calcularResultadosCarpeta() {
   let totalCarpeta = 0;
-  let countCarpeta = 0;
   
   // Calcular puntaje total de la sección Carpeta sumando los puntajes calculados
   document.querySelectorAll(".valoracion-carpetas").forEach(s => {
@@ -207,15 +206,14 @@ function calcularResultadosCarpeta() {
     
     // Asignar puntaje según la valoración
     if (valoracion === "Se observa") puntaje = peso * 1;
-    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0;
     else if (valoracion === "No se observa") puntaje = peso * 0;
     
     totalCarpeta += puntaje;
-    countCarpeta++;
   });
   
-  // Calcular porcentaje de la Carpeta
-  const porcentajeCarpeta = (totalCarpeta).toFixed(2); // Sumar solo los puntajes seleccionados
+  // Calcular porcentaje de la Carpeta (total de los puntajes)
+  const porcentajeCarpeta = totalCarpeta.toFixed(2); // Sumar solo los puntajes seleccionados
   
   // Asignar el porcentaje calculado al campo correspondiente
   document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
@@ -255,7 +253,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   // Totales y resultados
   const porcentajeAula = calcularPorcentajeAula();
   const resultadoAula = document.getElementById("resultado-final").value || "";
-  const porcentajeCarpeta = calcularPorcentajeCarpeta();
+  const porcentajeCarpeta = calcularResultadosCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
   // Capturamos la fecha y hora actuales 
   const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
@@ -297,5 +295,4 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
 </script>
 </body>
 </html>
-
 
