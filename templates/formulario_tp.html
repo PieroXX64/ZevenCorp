@@ -207,7 +207,7 @@ function calcularResultadosCarpeta() {
     
     // Asignar puntaje según la valoración
     if (valoracion === "Se observa") puntaje = peso * 1;        // Puntaje completo
-    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;  // Puntaje parcial
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0;  // Puntaje parcial
     else if (valoracion === "No se observa") puntaje = 0;     // Sin puntaje
     
     totalCarpeta += puntaje;  // Sumar el puntaje de cada pregunta
