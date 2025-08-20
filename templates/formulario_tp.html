@@ -197,9 +197,14 @@ preguntasCarpeta.forEach((pregunta, i) => {
 // Calcular resultados de la sección Carpeta
 function calcularResultadosCarpeta() {
   let totalCarpeta = 0;
-  
+  return porcentajeCarpeta;
+
   // Calcular puntaje total de la sección Carpeta sumando los puntajes calculados
-  document.querySelectorAll(".valoracion-carpetas").forEach(s => {
+  document.querySelectorAll(".valoracion-carpetas").forEach(select => {
+  select.addEventListener("change", () => {
+    calcularResultadosCarpeta();
+  });
+});
     const valoracion = s.value;
     const peso = 12.5; // Asumimos que el peso por pregunta es 12.5
     let puntaje = 0;
@@ -213,7 +218,8 @@ function calcularResultadosCarpeta() {
   });
   
   // Calcular porcentaje de la Carpeta (total de los puntajes)
-  const porcentajeCarpeta = totalCarpeta.toFixed(2); // Sumar solo los puntajes seleccionados
+ const porcentajeCarpeta = calcularResultadosCarpeta(); // ahora sí retorna
+
   
   // Asignar el porcentaje calculado al campo correspondiente
   document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
