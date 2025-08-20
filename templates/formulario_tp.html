@@ -255,14 +255,17 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   });
 
   // Totales y resultados
-  const porcentajeAula = calcularPorcentajeAula();
+  const porcentajeAula = parseFloat((document.getElementById("porcentaje").value || "").replace("%","")) || 0;
   const resultadoAula = document.getElementById("resultado-final").value || "";
-  const porcentajeCarpeta = calcularResultadosCarpeta();
+  const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
+
   // Capturamos la fecha y hora actuales 
-  const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
+  const fechaRegistro = new Date().toISOString().split('T')[0];  // Esto extrae solo la fecha (YYYY-MM-DD)
   // Capturamos la fecha manual seleccionada 
-  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro; // Si no se elige una fecha, usamos la fecha de registro
+  const fechaEvaluacion = document.getElementById("fecha-evaluacion").value || fechaRegistro;  // Si no se elige una fecha, usamos la fecha de registro
+  
+  // Payload para enviar al servidor
   const payload = {
     ANO: sessionStorage.getItem("ano"),
     PERIODO: sessionStorage.getItem("periodo"),
@@ -279,23 +282,29 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     respuestasAula,
     respuestasCarpeta,
     fechaRegistro, // Nueva clave para la hora
-    fechaEvaluacion // Fecha manual seleccionada
+    fechaEvaluacion  // Fecha manual seleccionada
   };
 
-  const response = await fetch("/guardar_resultado_tp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  try {
+    // Realizamos la solicitud POST a la API para guardar los resultados
+    const response = await fetch("/guardar_resultado_tp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  const result = await response.json();
-  if (result.status === "ok") {
-    alert("Evaluación guardada exitosamente.");
-    window.location.href = "/";
-  } else {
-    alert("Error al guardar la evaluación: " + result.mensaje);
+    const result = await response.json();
+
+    // Verificamos la respuesta del servidor
+    if (result.status === "ok") {
+      alert("Evaluación guardada exitosamente.");
+      window.location.href = "/";  // Redirigimos a la página principal después de enviar
+    } else {
+      alert("Error al guardar la evaluación: " + result.mensaje);
+    }
+  } catch (error) {
+    console.error("Error al enviar los datos:", error);
+    alert("Hubo un error al enviar la evaluación. Por favor, intente nuevamente.");
   }
 });
-</script>
-</body>
-</html>
+
