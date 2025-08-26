@@ -255,10 +255,10 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     });
   });
 
-  // Totales y resultados
-  const porcentajeAula = calcularPorcentajeAula();
+// Totales y resultados
+  const porcentajeAula = parseFloat((document.getElementById("porcentaje").value || "").replace("%","")) || 0;
   const resultadoAula = document.getElementById("resultado-final").value || "";
-  const porcentajeCarpeta = calcularResultadosCarpeta();
+  const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
   // Capturamos la fecha y hora actuales 
   const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
@@ -295,6 +295,10 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     window.location.href = "/";
   } else {
     alert("Error al guardar la evaluación: " + result.mensaje);
+  }
+} catch (error) {
+    console.error("Error al enviar los datos:", error);
+    alert("Hubo un error al enviar la evaluación. Por favor, intente nuevamente.");
   }
 });
 </script>
