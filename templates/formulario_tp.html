@@ -197,32 +197,40 @@ preguntasCarpeta.forEach((pregunta, i) => {
 // Calcular resultados de la sección Carpeta
 function calcularResultadosCarpeta() {
   let totalCarpeta = 0;
-  
+  let countCarpeta = 0;
+
   // Calcular puntaje total de la sección Carpeta sumando los puntajes calculados
   document.querySelectorAll(".valoracion-carpetas").forEach(select => {
     const valoracion = select.value;
-    const peso = 12.5; // Asumimos que el peso por pregunta es 12.5
+    const peso = 12.5; // El peso por pregunta en la sección Carpeta
     let puntaje = 0;
     
     // Asignar puntaje según la valoración
-    if (valoracion === "Se observa") puntaje = peso * 1;
-    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;
-    else if (valoracion === "No se observa") puntaje = peso * 0;
+    if (valoracion === "Se observa") puntaje = peso * 1;        // Puntaje completo
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0;  // Puntaje parcial
+    else if (valoracion === "No se observa") puntaje = 0;     // Sin puntaje
     
-    totalCarpeta += puntaje;
+    totalCarpeta += puntaje;  // Sumar el puntaje de cada pregunta
+    countCarpeta++;           // Contar el número de respuestas
   });
+
+  // Calcular porcentaje de la Carpeta (basado en el puntaje total obtenido)
+  const porcentajeCarpeta = (totalCarpeta).toFixed(2); // Usamos el puntaje total
   
   // Asignar el porcentaje calculado al campo correspondiente
-  document.getElementById("porcentaje-carpetas").value = totalCarpeta + "%";
+  document.getElementById("porcentaje-carpetas").value = porcentajeCarpeta + "%";
   
-  // Determinar el resultado final para Carpeta
+  // Determinar el resultado final para Carpeta según el porcentaje
   const resultadoCarpeta = document.getElementById("resultado-carpetas");
-  if (totalCarpeta >= 90) resultadoCarpeta.value = "DESTACADO";
-  else if (totalCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
-  else if (totalCarpeta >= 50) resultadoCarpeta.value = "EN PROCESO";
-  else if (totalCarpeta > 0) resultadoCarpeta.value = "EN INICIO";
+  if (porcentajeCarpeta == 100) resultadoCarpeta.value = "DESTACADO";
+  else if (porcentajeCarpeta >= 75) resultadoCarpeta.value = "LOGRADO";
+  else if (porcentajeCarpeta >= 50) resultadoCarpeta.value = "EN PROCESO";
+  else if (porcentajeCarpeta > 0) resultadoCarpeta.value = "EN INICIO";
   else resultadoCarpeta.value = "";
 }
+
+// Asegúrate de que la función `calcularResultadosCarpeta()` se ejecute cuando cambien las valoraciones
+document.querySelectorAll(".valoracion-carpetas").forEach(s => s.addEventListener("change", calcularResultadosCarpeta));
 
 // Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
