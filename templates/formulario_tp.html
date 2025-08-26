@@ -207,7 +207,7 @@ function calcularResultadosCarpeta() {
     
     // Asignar puntaje según la valoración
     if (valoracion === "Se observa") puntaje = peso * 1;        // Puntaje completo
-    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0;  // Puntaje parcial
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;  // Puntaje parcial
     else if (valoracion === "No se observa") puntaje = 0;     // Sin puntaje
     
     totalCarpeta += puntaje;  // Sumar el puntaje de cada pregunta
@@ -231,7 +231,7 @@ function calcularResultadosCarpeta() {
 
 // Asegúrate de que la función `calcularResultadosCarpeta()` se ejecute cuando cambien las valoraciones
 document.querySelectorAll(".valoracion-carpetas").forEach(s => s.addEventListener("change", calcularResultadosCarpeta));
-
+  
 // Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
   // --- AULA ---
@@ -255,7 +255,7 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     });
   });
 
-// Totales y resultados
+  // Totales y resultados
   const porcentajeAula = calcularPorcentajeAula();
   const resultadoAula = document.getElementById("resultado-final").value || "";
   const porcentajeCarpeta = calcularResultadosCarpeta();
@@ -295,8 +295,8 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     window.location.href = "/";
   } else {
     alert("Error al guardar la evaluación: " + result.mensaje);
-  }
-} catch (error) {
+  }   
+  } catch (error) {
     console.error("Error al enviar los datos:", error);
     alert("Hubo un error al enviar la evaluación. Por favor, intente nuevamente.");
   }
@@ -304,5 +304,4 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
 </script>
 </body>
 </html>
-
 
