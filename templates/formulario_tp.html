@@ -234,6 +234,10 @@ document.querySelectorAll(".valoracion-carpetas").forEach(s => s.addEventListene
   
 // Enviar formulario
 document.getElementById("btn-enviar").addEventListener("click", async () => {
+// Primero, realiza el cálculo de los resultados
+  calcularResultados();  // Calcula los resultados de la sección AULA
+  calcularResultadosCarpeta(); // Calcula los resultados de la sección CARPETA
+  
   // --- AULA ---
   const respuestasAula = [];
   document.querySelectorAll("#preguntas-aula .pregunta").forEach(p => {
@@ -255,10 +259,10 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
     });
   });
 
-  // Totales y resultados
-  const porcentajeAula = calcularPorcentajeAula();
+// Totales y resultados
+  const porcentajeAula = parseFloat((document.getElementById("porcentaje").value || "").replace("%","")) || 0;
   const resultadoAula = document.getElementById("resultado-final").value || "";
-  const porcentajeCarpeta = calcularResultadosCarpeta();
+  const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
   // Capturamos la fecha y hora actuales 
   const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
