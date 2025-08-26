@@ -207,14 +207,14 @@ function calcularResultadosCarpeta() {
     
     // Asignar puntaje según la valoración
     if (valoracion === "Se observa") puntaje = peso * 1;        // Puntaje completo
-    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0.5;  // Puntaje parcial
+    else if (valoracion === "Se observa parcialmente") puntaje = peso * 0;  // Puntaje parcial
     else if (valoracion === "No se observa") puntaje = 0;     // Sin puntaje
     
     totalCarpeta += puntaje;  // Sumar el puntaje de cada pregunta
     countCarpeta++;           // Contar el número de respuestas
   });
 
-  // Calcular porcentaje de la Carpeta (basado en el puntaje total obtenido)
+  // Calcular porcentaje de la Carpeta (basado en el puntaje ;otal obtenido)
   const porcentajeCarpeta = (totalCarpeta).toFixed(2); // Usamos el puntaje total
   
   // Asignar el porcentaje calculado al campo correspondiente
@@ -296,10 +296,6 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   } else {
     alert("Error al guardar la evaluación: " + result.mensaje);
   }   
-  } catch (error) {
-    console.error("Error al enviar los datos:", error);
-    alert("Hubo un error al enviar la evaluación. Por favor, intente nuevamente.");
-  }
 });
 </script>
 </body>
