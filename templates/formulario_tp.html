@@ -256,9 +256,9 @@ document.getElementById("btn-enviar").addEventListener("click", async () => {
   });
 
 // Totales y resultados
-  const porcentajeAula = parseFloat((document.getElementById("porcentaje").value || "").replace("%","")) || 0;
+  const porcentajeAula = calcularResultados();
   const resultadoAula = document.getElementById("resultado-final").value || "";
-  const porcentajeCarpeta = parseFloat((document.getElementById("porcentaje-carpetas").value || "").replace("%","")) || 0;
+  const porcentajeCarpeta = calcularResultadosCarpeta();
   const resultadoCarpeta = document.getElementById("resultado-carpetas").value || "";
   // Capturamos la fecha y hora actuales 
   const fechaRegistro = new Date().toISOString().split('T')[0]; // Esto extrae solo la fecha (YYYY-MM-DD)
